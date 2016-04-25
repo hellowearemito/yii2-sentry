@@ -37,6 +37,13 @@ class SentryComponent extends Component
     public $options = [];
 
     /**
+     * Raven-JS configuration array
+     *
+     * @var array
+     */
+    public $clientOptions = [];
+
+    /**
      * @var \Raven_Client
      */
     protected $client;
@@ -72,7 +79,7 @@ class SentryComponent extends Component
     {
         if (!empty($this->publicDsn) && Yii::$app instanceof \yii\web\Application) {
             RavenAsset::register(Yii::$app->getView());
-            Yii::$app->getView()->registerJs('Raven.config(' . Json::encode($this->publicDsn) . ').install();', View::POS_HEAD);
+            Yii::$app->getView()->registerJs('Raven.config(' . Json::encode($this->publicDsn) . ', ' . Json::encode($this->clientOptions) . ').install();', View::POS_HEAD);
         }
     }
 
