@@ -28,7 +28,7 @@ Usage
 Once the extension is installed, set your configuration in config file:
 
 ```php
-
+    'bootstrap' => ['log', 'sentry'],
     'components' => [
         'sentry' => [
             'class' => 'mito\sentry\SentryComponent',
