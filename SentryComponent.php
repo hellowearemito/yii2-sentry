@@ -70,7 +70,7 @@ class SentryComponent extends Component
      */
     private function registerAssets()
     {
-        if (!empty($this->publicDsn)) {
+        if (!empty($this->publicDsn) && Yii::$app instanceof \yii\web\Application) {
             RavenAsset::register(Yii::$app->getView());
             Yii::$app->getView()->registerJs('Raven.config(' . Json::encode($this->publicDsn) . ').install();', View::POS_HEAD);
         }
