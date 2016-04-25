@@ -2,9 +2,13 @@
 
 namespace mito\sentry;
 
+use mito\sentry\assets\RavenAsset;
+use Yii;
 use yii\base\Component;
 use yii\base\ErrorException;
 use yii\base\InvalidConfigException;
+use yii\helpers\Json;
+use yii\web\View;
 
 class SentryComponent extends Component
 {
@@ -46,6 +50,19 @@ class SentryComponent extends Component
         $this->errorHandler->registerErrorHandler();
 
         $this->exceptionHandler = set_exception_handler(array($this, 'handleExceptions'));
+
+        $this->registerAssets();
+    }
+
+    /**
+     * Registers RavenJS if publicDsn exists
+     */
+    private function registerAssets()
+    {
+        if (!empty($this->publicDsn)) {
+            RavenAsset::register(Yii::$app->getView());
+            Yii::$app->getView()->registerJs('Raven.config(' . Json::encode($this->publicDsn) . ').install();', View::POS_HEAD);
+        }
     }
 
     /**
