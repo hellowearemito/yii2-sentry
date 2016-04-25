@@ -12,7 +12,8 @@
     ],
     "require": {
         "yiisoft/yii2": "*",
-        "raven/raven": "0.13.*"
+        "raven/raven": "0.13.*",
+        "bower-asset/raven-js": "2.3.*"
     },
     "autoload": {
         "psr-4": {
