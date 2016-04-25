@@ -25,16 +25,26 @@ to the require section of your `composer.json` file.
 Usage
 -----
 
-Once the extension is installed, set your configuration in config file:
+Once the extension is installed, set your configuration in common config file:
 
 ```php
     'bootstrap' => ['log', 'sentry'],
     'components' => [
+    
+        // required
         'sentry' => [
             'class' => 'mito\sentry\SentryComponent',
             'dsn' => '', // private DSN for PHP errors
-            'publicDsn' => '', // for JS errors 
+            'publicDsn' => '', // for JS errors
+            'clientOptions' => [ // raven-js config parameter
+                'whitelistUrls' => [ // collect JS errors from these urls
+                    'http://staging.my-product.com',
+                    'https://my-product.com',
+                ],
+            ],
         ],
+        
+        // optional
         'log' => [
             'targets' => [
                 [
@@ -42,6 +52,16 @@ Once the extension is installed, set your configuration in config file:
                     'levels' => ['error', 'warning'],
                 ]
             ],
+        ],
+    ],
+```
+
+To skip collecting errors from development environment use this setup in your development config file:
+
+```
+    'components' => [
+        'sentry' => [
+            'enabled' => false,
         ],
     ],
 ```

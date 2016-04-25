@@ -40,6 +40,7 @@ class SentryComponent extends Component
      * Raven-JS configuration array
      *
      * @var array
+     * @see https://docs.getsentry.com/hosted/clients/javascript/config/
      */
     public $clientOptions = [];
 
