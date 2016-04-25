@@ -25,7 +25,23 @@ to the require section of your `composer.json` file.
 Usage
 -----
 
-Once the extension is installed, simply use it in your code by  :
+Once the extension is installed, set your configuration in config file:
 
 ```php
-<?= \mito\sentry\AutoloadExample::widget(); ?>```
+
+    'components' => [
+        'sentry' => [
+            'class' => 'mito\sentry\SentryComponent',
+            'dsn' => '', // private DSN for PHP errors
+            'publicDsn' => '', // for JS errors 
+        ],
+        'log' => [
+            'targets' => [
+                [
+                    'class' => 'mito\sentry\SentryTarget',
+                    'levels' => ['error', 'warning'],
+                ]
+            ],
+        ],
+    ],
+```
