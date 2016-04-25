@@ -1,0 +1,22 @@
+{
+    "name": "mito/yii2-sentry",
+    "description": "Yii 2 extension for Sentry",
+    "type": "yii2-extension",
+    "keywords": ["yii2","extension","sentry"],
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Albert Borsos",
+            "email": "a.borsos@mito.hu"
+        }
+    ],
+    "require": {
+        "yiisoft/yii2": "*",
+        "raven/raven": "0.13.*"
+    },
+    "autoload": {
+        "psr-4": {
+            "mito\\sentry\\": ""
+        }
+    }
+}
