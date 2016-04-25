@@ -14,6 +14,13 @@ class SentryComponent extends Component
 {
 
     /**
+     * Set to `false` in development environment to skip collecting errors
+     *
+     * @var bool
+     */
+    public $enabled = true;
+
+    /**
      * @var string Sentry DSN
      */
     public $dsn;
@@ -40,6 +47,10 @@ class SentryComponent extends Component
 
     public function init()
     {
+        if (!$this->enabled) {
+            return;
+        }
+
         if (empty($this->dsn)) {
             throw new InvalidConfigException('Private or public DSN must be set!');
         }
