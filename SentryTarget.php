@@ -22,6 +22,10 @@ class SentryTarget extends Target
             throw new InvalidConfigException('Missing sentry component!');
         }
 
+        if(!$sentry->enabled){
+            return;
+        }
+
         $this->client = \Yii::$app->sentry->getClient();
     }
 
