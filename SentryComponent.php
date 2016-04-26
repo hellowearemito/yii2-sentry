@@ -27,14 +27,27 @@ class SentryComponent extends Component
 
     /**
      * @var string public Sentry DSN for raven-js
+     * @deprecated since version 0.4.0
      */
     public $publicDsn;
+
+    /**
+     * @var string environment name
+     */
+    public $environment = 'development';
 
     /**
      * @var array Options of the \Raven_Client.
      * @see \Raven_Client::__construct for more details
      */
     public $options = [];
+
+    /**
+     * collect JavaScript errors
+     *
+     * @var bool
+     */
+    public $jsNotifier = false;
 
     /**
      * Raven-JS configuration array
@@ -63,6 +76,8 @@ class SentryComponent extends Component
             throw new InvalidConfigException('Private or public DSN must be set!');
         }
 
+        $this->setEnvironmentOptions();
+
         $this->client = new \Raven_Client($this->dsn, $this->options);
 
         $this->errorHandler = new \Raven_ErrorHandler($this->client);
@@ -73,14 +88,29 @@ class SentryComponent extends Component
         $this->registerAssets();
     }
 
+    private function setEnvironmentOptions()
+    {
+        if (empty($this->environment)) {
+            return;
+        }
+
+        $this->options['tags']['environment'] = $this->environment;
+        $this->clientOptions['tags']['environment'] = $this->environment;
+    }
+
     /**
      * Registers RavenJS if publicDsn exists
      */
     private function registerAssets()
     {
-        if (!empty($this->publicDsn) && Yii::$app instanceof \yii\web\Application) {
+        /** too keep BC */
+        if (!empty($this->publicDsn)) {
+            $this->jsNotifier = true;
+        }
+
+        if ($this->jsNotifier && Yii::$app instanceof \yii\web\Application) {
             RavenAsset::register(Yii::$app->getView());
-            Yii::$app->getView()->registerJs('Raven.config(' . Json::encode($this->publicDsn) . ', ' . Json::encode($this->clientOptions) . ').install();', View::POS_HEAD);
+            Yii::$app->getView()->registerJs('Raven.config(' . Json::encode($this->getPublicDsn()) . ', ' . Json::encode($this->clientOptions) . ').install();', View::POS_HEAD);
         }
     }
 
@@ -133,5 +163,10 @@ class SentryComponent extends Component
     public function getClient()
     {
         return $this->client;
+    }
+
+    private function getPublicDsn()
+    {
+        return preg_replace('/^(https:\/\/|http:\/\/)([a-z0-9]*):([a-z0-9]*)@(.*)/', '$1$2@$4', $this->dsn);
     }
 }

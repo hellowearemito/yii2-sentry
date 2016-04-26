@@ -34,8 +34,9 @@ Once the extension is installed, set your configuration in common config file:
         // required
         'sentry' => [
             'class' => 'mito\sentry\SentryComponent',
-            'dsn' => '', // private DSN for PHP errors
-            'publicDsn' => '', // for JS errors
+            'dsn' => '', // private DSN
+            'environment' => YII_CONFIG_ENVIRONMENT // if not set, the default is `development`
+            'jsNotifier' => true, // to collect JS errors
             'clientOptions' => [ // raven-js config parameter
                 'whitelistUrls' => [ // collect JS errors from these urls
                     'http://staging.my-product.com',
