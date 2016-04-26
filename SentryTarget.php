@@ -10,23 +10,31 @@ use yii\log\Target;
 
 class SentryTarget extends Target
 {
-
+    /**
+     * @var \Raven_Client
+     */
     protected $client;
 
     public function init()
     {
         parent::init();
+
+        if (!$this->isEnabled()) {
+            return;
+        }
+
+        $this->client = \Yii::$app->sentry->getClient();
+    }
+
+    private function isEnabled()
+    {
         $sentry = \Yii::$app->sentry;
 
         if (empty($sentry) || !$sentry instanceof SentryComponent) {
             throw new InvalidConfigException('Missing sentry component!');
         }
 
-        if(!$sentry->enabled){
-            return;
-        }
-
-        $this->client = \Yii::$app->sentry->getClient();
+        return $sentry->enabled;
     }
 
     protected function getContextMessage()
@@ -62,6 +70,10 @@ class SentryTarget extends Target
      */
     public function export()
     {
+        if (!$this->isEnabled()) {
+            return;
+        }
+
         foreach ($this->messages as $message) {
             list($msg, $level, $category, $timestamp, $traces) = $message;
             $levelName = Logger::getLevelName($level);
