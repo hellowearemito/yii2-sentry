@@ -62,8 +62,6 @@ class SentryComponent extends Component
      */
     protected $client;
 
-    protected $errorHandler;
-
     protected $exceptionHandler;
 
     public function init()
@@ -79,9 +77,6 @@ class SentryComponent extends Component
         $this->setEnvironmentOptions();
 
         $this->client = new \Raven_Client($this->dsn, $this->options);
-
-        $this->errorHandler = new \Raven_ErrorHandler($this->client);
-        $this->errorHandler->registerErrorHandler();
 
         $this->exceptionHandler = set_exception_handler(array($this, 'handleExceptions'));
 
