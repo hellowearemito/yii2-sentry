@@ -5,6 +5,7 @@ namespace mito\sentry;
 use Raven_Stacktrace;
 use yii\base\ErrorException;
 use yii\base\InvalidConfigException;
+use yii\di\Instance;
 use yii\log\Logger;
 use yii\log\Target;
 
@@ -15,26 +16,22 @@ class SentryTarget extends Target
      */
     protected $client;
 
+    /**
+     * @var string|SentryComponent
+     */
+    protected $sentry = 'sentry';
+
     public function init()
     {
         parent::init();
 
-        if (!$this->isEnabled()) {
+        $this->sentry = Instance::ensure($this->sentry, SentryComponent::className());
+
+        if (!$this->sentry->enabled) {
             return;
         }
 
-        $this->client = \Yii::$app->sentry->getClient();
-    }
-
-    private function isEnabled()
-    {
-        $sentry = \Yii::$app->sentry;
-
-        if (empty($sentry) || !$sentry instanceof SentryComponent) {
-            throw new InvalidConfigException('Missing sentry component!');
-        }
-
-        return $sentry->enabled;
+        $this->client = $this->sentry->getClient();
     }
 
     protected function getContextMessage()
@@ -70,7 +67,7 @@ class SentryTarget extends Target
      */
     public function export()
     {
-        if (!$this->isEnabled()) {
+        if (!$this->sentry->enabled) {
             return;
         }
 
