@@ -103,7 +103,7 @@ class SentryComponent extends Component
      */
     private function registerAssets()
     {
-        /** too keep BC */
+        /** to keep BC */
         if (!empty($this->publicDsn)) {
             $this->jsNotifier = true;
         }

@@ -35,7 +35,7 @@ Once the extension is installed, set your configuration in common config file:
         'sentry' => [
             'class' => 'mito\sentry\SentryComponent',
             'dsn' => '', // private DSN
-            'environment' => YII_CONFIG_ENVIRONMENT // if not set, the default is `development`
+            'environment' => YII_CONFIG_ENVIRONMENT, // if not set, the default is `development`
             'jsNotifier' => true, // to collect JS errors
             'clientOptions' => [ // raven-js config parameter
                 'whitelistUrls' => [ // collect JS errors from these urls
