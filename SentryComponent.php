@@ -62,8 +62,6 @@ class SentryComponent extends Component
      */
     protected $client;
 
-    protected $exceptionHandler;
-
     public function init()
     {
         if (!$this->enabled) {
@@ -77,8 +75,6 @@ class SentryComponent extends Component
         $this->setEnvironmentOptions();
 
         $this->client = new \Raven_Client($this->dsn, $this->options);
-
-        $this->exceptionHandler = set_exception_handler(array($this, 'handleExceptions'));
 
         $this->registerAssets();
     }
@@ -107,49 +103,6 @@ class SentryComponent extends Component
             RavenAsset::register(Yii::$app->getView());
             Yii::$app->getView()->registerJs('Raven.config(' . Json::encode($this->getPublicDsn()) . ', ' . Json::encode($this->clientOptions) . ').install();', View::POS_HEAD);
         }
-    }
-
-    /**
-     * @param \Exception $e
-     */
-    public function handleExceptions($e)
-    {
-        restore_exception_handler();
-        if ($this->canLogException($e)) {
-            $e->event_id = $this->client->getIdent($this->client->captureException($e));
-        }
-        if ($this->exceptionHandler) {
-            call_user_func($this->exceptionHandler, $e);
-        }
-    }
-
-    /**
-     * Filter exception and its previous exceptions for yii\base\ErrorException
-     * Raven expects normal stacktrace, but yii\base\ErrorException may have xdebug_get_function_stack
-     *
-     * @param \Exception $e
-     * @return bool
-     */
-    public function canLogException(&$e)
-    {
-        if (function_exists('xdebug_get_function_stack')) {
-            if ($e instanceof ErrorException) {
-                return false;
-            }
-            $selectedException = $e;
-            while ($nestedException = $selectedException->getPrevious()) {
-                if ($nestedException instanceof ErrorException) {
-                    $ref = new \ReflectionProperty('Exception', 'previous');
-                    $ref->setAccessible(true);
-                    $ref->setValue($selectedException, null);
-
-                    return true;
-                }
-                $selectedException = $selectedException->getPrevious();
-            }
-        }
-
-        return true;
     }
 
     /**
