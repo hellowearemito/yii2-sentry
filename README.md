@@ -28,7 +28,6 @@ Usage
 Once the extension is installed, set your configuration in common config file:
 
 ```php
-
     'bootstrap' => ['log', 'sentry'],
     'components' => [
     
@@ -56,17 +55,14 @@ Once the extension is installed, set your configuration in common config file:
             ],
         ],
     ],
-
 ```
 
 To skip collecting errors from development environment use this setup in your development config file:
 
 ```php
-
     'components' => [
         'sentry' => [
             'enabled' => false,
         ],
     ],
-
 ```
