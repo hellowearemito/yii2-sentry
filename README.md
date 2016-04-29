@@ -28,10 +28,10 @@ Usage
 Once the extension is installed, set your configuration in common config file:
 
 ```php
+
     'bootstrap' => ['log', 'sentry'],
     'components' => [
     
-        // required
         'sentry' => [
             'class' => 'mito\sentry\SentryComponent',
             'dsn' => '', // private DSN
@@ -44,25 +44,29 @@ Once the extension is installed, set your configuration in common config file:
                 ],
             ],
         ],
-        
-        // optional
         'log' => [
             'targets' => [
                 [
                     'class' => 'mito\sentry\SentryTarget',
                     'levels' => ['error', 'warning'],
+                    'except' => [
+                        'yii\web\HttpException:404',
+                    ],
                 ]
             ],
         ],
     ],
+
 ```
 
 To skip collecting errors from development environment use this setup in your development config file:
 
-```
+```php
+
     'components' => [
         'sentry' => [
             'enabled' => false,
         ],
     ],
+
 ```
