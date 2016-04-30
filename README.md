@@ -17,7 +17,7 @@ Either run
 php composer.phar require --prefer-dist mito/yii2-sentry "*"
 ```
 
-or add the following line to the require section of your `composer.json` file.
+or add the following line to the require section of your `composer.json` file:
 
 ```
 "mito/yii2-sentry": "*"
