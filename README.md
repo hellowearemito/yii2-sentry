@@ -1,9 +1,11 @@
 Yii 2 - Sentry Error Logger
 ==================
+
 [Sentry](https://getsentry.com/) provides real-time crash reporting for web apps, both server and client side. This is a Yii 2 extension which lets you integrate your projects to Sentry and log PHP and JavaScript errors.
 
 Brought to you by [Mito](http://mito.hu). 
 
+[![Latest Stable Version](https://poser.pugx.org/mito/yii2-sentry/v/stable)](https://packagist.org/packages/mito/yii2-sentry) [![Total Downloads](https://poser.pugx.org/mito/yii2-sentry/downloads)](https://packagist.org/packages/mito/yii2-sentry) [![License](https://poser.pugx.org/mito/yii2-sentry/license)](https://packagist.org/packages/mito/yii2-sentry)
 
 ## Installation
 
