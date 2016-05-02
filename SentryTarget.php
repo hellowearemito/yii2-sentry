@@ -12,6 +12,11 @@ use yii\log\Target;
 class SentryTarget extends Target
 {
     /**
+     * @var bool Write the context information. The default implementation will dump user information, system variables, etc.
+     */
+    public $context = true;
+
+    /**
      * @var \Raven_Client
      */
     protected $client;
@@ -55,6 +60,10 @@ class SentryTarget extends Target
      */
     public function export()
     {
+        if (!$this->sentry->enabled) {
+            return;
+        }
+
         foreach ($this->messages as $message) {
             list($context, $level, $category, $timestamp, $traces) = $message;
 
@@ -72,10 +81,6 @@ class SentryTarget extends Target
 
             if ($this->context) {
                 $extra['context'] = parent::getContextMessage();
-            }
-
-            if (is_callable($this->extraCallback)) {
-                $extra = call_user_func($this->extraCallback, $context, $extra);
             }
 
             $data = [
