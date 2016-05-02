@@ -12,11 +12,6 @@ use yii\log\Target;
 class SentryTarget extends Target
 {
     /**
-     * @var bool Write the context information. The default implementation will dump user information, system variables, etc.
-     */
-    public $context = true;
-
-    /**
      * @var \Raven_Client
      */
     protected $client;
@@ -77,10 +72,6 @@ class SentryTarget extends Target
                 $description = $context['msg'];
                 $extra = $context;
                 unset($extra['msg']);
-            }
-
-            if ($this->context) {
-                $extra['context'] = parent::getContextMessage();
             }
 
             $data = [
