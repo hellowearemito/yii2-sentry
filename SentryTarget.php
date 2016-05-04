@@ -21,6 +21,8 @@ class SentryTarget extends Target
      */
     protected $sentry = 'sentry';
 
+    protected $capturedMessages = [];
+
     /**
      * Initializes the object.
      * This method is invoked at the end of the constructor after the object is initialized with the
@@ -84,7 +86,7 @@ class SentryTarget extends Target
                 ]
             ];
 
-            $this->client->capture($data, $traces);
+            $this->capturedMessages[] = $this->client->capture($data, $traces);
         }
     }
 
@@ -106,5 +108,10 @@ class SentryTarget extends Target
         ];
 
         return isset($levels[$level]) ? $levels[$level] : 'error';
+    }
+
+    public function getCapturedMessages()
+    {
+        return $this->capturedMessages;
     }
 }

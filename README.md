@@ -7,6 +7,8 @@ Brought to you by [Mito](http://mito.hu).
 
 [![Latest Stable Version](https://poser.pugx.org/mito/yii2-sentry/v/stable)](https://packagist.org/packages/mito/yii2-sentry) [![Total Downloads](https://poser.pugx.org/mito/yii2-sentry/downloads)](https://packagist.org/packages/mito/yii2-sentry) [![License](https://poser.pugx.org/mito/yii2-sentry/license)](https://packagist.org/packages/mito/yii2-sentry)
 
+[![Build Status](https://travis-ci.org/hellowearemito/yii2-sentry.svg?branch=master)](https://travis-ci.org/hellowearemito/yii2-sentry)
+
 ## Installation
 
 The preferred way to install this extension is through [composer](http://getcomposer.org/download/).

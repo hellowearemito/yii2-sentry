@@ -50,6 +50,11 @@ class SentryComponent extends Component
     public $jsNotifier = false;
 
     /**
+     * @var string
+     */
+    public $ravenClass = '\Raven_Client';
+
+    /**
      * Raven-JS configuration array
      *
      * @var array
@@ -68,13 +73,13 @@ class SentryComponent extends Component
             return;
         }
 
+        $this->setEnvironmentOptions();
+
         if (empty($this->dsn)) {
             throw new InvalidConfigException('Private or public DSN must be set!');
         }
 
-        $this->setEnvironmentOptions();
-
-        $this->client = new \Raven_Client($this->dsn, $this->options);
+        $this->client = new $this->ravenClass($this->dsn, $this->options);
 
         $this->registerAssets();
     }
@@ -113,7 +118,7 @@ class SentryComponent extends Component
         return $this->client;
     }
 
-    private function getPublicDsn()
+    public function getPublicDsn()
     {
         return preg_replace('/^(https:\/\/|http:\/\/)([a-z0-9]*):([a-z0-9]*)@(.*)/', '$1$2@$4', $this->dsn);
     }

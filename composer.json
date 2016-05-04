@@ -15,9 +15,20 @@
         "raven/raven": "0.13.*",
         "bower-asset/raven-js": "2.3.*"
     },
+    "require-dev": {
+        "yiisoft/yii2-codeception": "~2.0",
+        "codeception/codeception": "2.0.*",
+        "codeception/specify": " *",
+        "codeception/verify": " *"
+    },
     "autoload": {
         "psr-4": {
             "mito\\sentry\\": ""
+        }
+    },
+    "extra": {
+        "asset-installer-paths": {
+            "bower-asset-library": "vendor/bower"
         }
     }
 }
