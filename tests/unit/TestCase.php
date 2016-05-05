@@ -73,13 +73,6 @@ abstract class TestCase extends \yii\codeception\TestCase
         \Yii::setAlias('@web', '/runtime/web');
     }
 
-    protected function tearDown()
-    {
-        FileHelper::removeDirectory(Yii::getAlias('@mitosentry/tests/unit/runtime/web/assets'));
-        parent::tearDown();
-    }
-
-
     protected function mockApplication($config = null)
     {
         if (isset(Yii::$app)) {
@@ -114,13 +107,12 @@ abstract class TestCase extends \yii\codeception\TestCase
             'class' => $applicationClass,
             'bootstrap' => ['sentry'],
             'components' => [
+                'assetManager' => [
+                    'basePath' => Yii::getAlias('@mitosentry/tests/unit/runtime/web/assets'),
+                ],
                 'sentry' => $config,
             ],
         ]);
-
-        if (ArrayHelper::getValue($config, 'jsNotifier', false)) {
-            $this->mockView();
-        }
     }
 
     protected function setSentryTarget($configTarget = [], $configComponent = [], $applicationClass = self::APP_WEB)
@@ -132,6 +124,9 @@ abstract class TestCase extends \yii\codeception\TestCase
             'class' => $applicationClass,
             'bootstrap' => ['sentry'],
             'components' => [
+                'assetManager' => [
+                    'basePath' => Yii::getAlias('@mitosentry/tests/unit/runtime/web/assets'),
+                ],
                 'sentry' => $configComponent,
                 'log' => [
                     'targets' => [
@@ -140,35 +135,10 @@ abstract class TestCase extends \yii\codeception\TestCase
                 ],
             ],
         ]);
-
-        if (ArrayHelper::getValue($configComponent, 'jsNotifier', false)) {
-            $this->mockView();
-        }
-    }
-
-    protected function mockView()
-    {
-        return new View([
-            'assetManager' => $this->mockAssetManager(),
-        ]);
-    }
-
-    protected function mockAssetManager()
-    {
-        $assetDir = Yii::getAlias('@mitosentry/tests/unit/runtime/web/assets');
-        if (!is_dir($assetDir)) {
-            mkdir($assetDir, 0777, true);
-        }
-
-        return new AssetManager([
-            'basePath' => $assetDir,
-            'baseUrl' => '/tests/unit/runtime/web',
-        ]);
     }
 
     protected function debug($data)
     {
         return fwrite(STDERR, print_r($data, true));
     }
-
 }

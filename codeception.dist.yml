@@ -19,5 +19,5 @@ coverage:
     enabled: true
     whitelist:
         include:
-            - ./SentryComponent.php
-            - ./SentryTarget.php
+            - ./src/SentryComponent.php
+            - ./src/SentryTarget.php
