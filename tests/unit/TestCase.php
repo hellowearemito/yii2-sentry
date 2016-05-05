@@ -18,6 +18,9 @@ use yii\web\View;
  */
 abstract class TestCase extends \yii\codeception\TestCase
 {
+    const APP_CONSOLE = '\yii\console\Application';
+    const APP_WEB = '\yii\web\Application';
+
     public $appConfig = '@mitosentry/tests/unit/config/main.php';
 
     protected $sentryComponentConfig = [
@@ -35,6 +38,18 @@ abstract class TestCase extends \yii\codeception\TestCase
             'yii\web\HttpException:404',
         ],
     ];
+
+    /**
+     * application data provider
+     * @return array
+     */
+    public function applications()
+    {
+        return [
+            [self::APP_WEB],
+            [self::APP_CONSOLE],
+        ];
+    }
 
     protected function setUp()
     {
@@ -85,17 +100,18 @@ abstract class TestCase extends \yii\codeception\TestCase
         }
 
         if (!isset($config['class'])) {
-            $config['class'] = 'yii\web\Application';
+            $config['class'] = self::APP_WEB;
         }
 
         return Yii::createObject($config);
     }
 
-    protected function setSentryComponent($config = [])
+    protected function setSentryComponent($config = [], $applicationClass = self::APP_WEB)
     {
         $config = ArrayHelper::merge($this->sentryComponentConfig, $config);
 
         $this->mockApplication([
+            'class' => $applicationClass,
             'bootstrap' => ['sentry'],
             'components' => [
                 'sentry' => $config,
@@ -107,12 +123,13 @@ abstract class TestCase extends \yii\codeception\TestCase
         }
     }
 
-    protected function setSentryTarget($configTarget = [], $configComponent = [])
+    protected function setSentryTarget($configTarget = [], $configComponent = [], $applicationClass = self::APP_WEB)
     {
         $configComponent = ArrayHelper::merge($this->sentryComponentConfig, $configComponent);
         $configTarget = ArrayHelper::merge($this->sentryTargetConfig, $configTarget);
 
         $this->mockApplication([
+            'class' => $applicationClass,
             'bootstrap' => ['sentry'],
             'components' => [
                 'sentry' => $configComponent,

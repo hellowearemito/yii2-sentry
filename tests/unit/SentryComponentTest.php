@@ -12,36 +12,47 @@ use yii\web\View;
 
 class SentryComponentTest extends TestCase
 {
-    public function testComponentIsNotEnabledAndDsnIsNotSetThenTheApplicationDoesNotCrash()
+    /**
+     * @dataProvider applications
+     */
+    public function testComponentIsNotEnabledAndDsnIsNotSetThenTheApplicationDoesNotCrash($application)
     {
         $this->setSentryComponent([
             'enabled' => false,
             'dsn' => null,
-        ]);
+        ], $application);
 
         $this->assertNotInstanceOf('\Raven_Client', Yii::$app->sentry->client);
     }
 
-    public function testComponentIsEnabledThenRavenClientExists()
+    /**
+     * @dataProvider applications
+     */
+    public function testComponentIsEnabledThenRavenClientExists($application)
     {
-        $this->setSentryComponent();
+        $this->setSentryComponent([], $application);
 
         $this->assertInstanceOf('\Raven_Client', Yii::$app->sentry->client);
     }
 
     /**
+     * @dataProvider applications
      * @expectedException \yii\base\InvalidConfigException
      */
-    public function testComponentIsEnabledAndDsnIsNotSetThenTheApplicationCrash()
+    public function testComponentIsEnabledAndDsnIsNotSetThenTheApplicationCrash($application)
     {
         $this->setSentryComponent([
             'dsn' => null,
-        ]);
+        ], $application);
     }
 
-    public function testConvertPrivateDsnToPublicDsn()
+    /**
+     * @dataProvider applications
+     */
+
+    public function testConvertPrivateDsnToPublicDsn($application)
     {
-        $this->setSentryComponent();
+        $this->setSentryComponent([], $application);
 
         $this->assertEquals('https://65b4cf757v9kx53ja583f038bb1a07d6@getsentry.com/1', Yii::$app->sentry->getPublicDsn());
     }
@@ -53,17 +64,21 @@ class SentryComponentTest extends TestCase
             'development' => ['development', 'development'],
             'staging' => ['staging', 'staging'],
             'production' => ['production', 'production'],
+            'empty @console' => [null, null, self::APP_CONSOLE],
+            'development @console' => ['development', 'development', self::APP_CONSOLE],
+            'staging @console' => ['staging', 'staging', self::APP_CONSOLE],
+            'production @console' => ['production', 'production', self::APP_CONSOLE],
         ];
     }
 
     /**
      * @dataProvider environments
      */
-    public function testSetEnvironment($environment, $expected)
+    public function testSetEnvironment($environment, $expected, $application = self::APP_WEB)
     {
         $this->setSentryComponent([
             'environment' => $environment
-        ]);
+        ], $application);
 
         $this->assertEquals($expected, Yii::$app->sentry->environment);
         if (!empty($environment)) {
@@ -73,48 +88,67 @@ class SentryComponentTest extends TestCase
         }
     }
 
-    public function testIfPublicDsnSetThenJsNotifierIsEnabled()
+    /**
+     * @dataProvider applications
+     */
+    public function testIfPublicDsnSetThenJsNotifierIsEnabled($application)
     {
         $this->setSentryComponent([
             'publicDsn' => 'https://65b4cf757v9kx53ja583f038bb1a07d6@getsentry.com/1',
             'jsNotifier' => false,
-        ]);
+        ], $application);
 
         $this->assertTrue(Yii::$app->sentry->jsNotifier);
     }
 
-    public function testIfPublicDsnEmptyAndJsNotifierFalse()
+    /**
+     * @dataProvider applications
+     */
+    public function testIfPublicDsnEmptyAndJsNotifierFalse($application)
     {
         $this->setSentryComponent([
             'publicDsn' => '',
             'jsNotifier' => false,
-        ]);
+        ], $application);
 
-        $this->assertArrayNotHasKey('mito\sentry\assets\RavenAsset', Yii::$app->view->assetManager->bundles);
+        $this->assertArrayNotHasKey('mito\sentry\assets\RavenAsset', Yii::$app->view->assetBundles);
     }
 
-    public function testIfPublicDsnIsNotSetAndJsNotifierIsFalseThenDoNotRegisterAssets()
+    /**
+     * @dataProvider applications
+     */
+    public function testIfPublicDsnIsNotSetAndJsNotifierIsFalseThenDoNotRegisterAssets($application)
     {
         $this->setSentryComponent([
             'jsNotifier' => false,
-        ]);
+        ], $application);
 
-        $this->assertArrayNotHasKey('mito\sentry\assets\RavenAsset', Yii::$app->view->assetManager->bundles);
+        $this->assertArrayNotHasKey('mito\sentry\assets\RavenAsset', Yii::$app->view->assetBundles);
     }
 
-    public function testComponentIsNotEnabledThenDoNotRegisterAssets()
+    /**
+     * @dataProvider applications
+     */
+    public function testComponentIsNotEnabledThenDoNotRegisterAssets($application)
     {
         $this->setSentryComponent([
             'enabled' => false,
-        ]);
+        ], $application);
 
-        $this->assertArrayNotHasKey('mito\sentry\assets\RavenAsset', Yii::$app->view->assetManager->bundles);
+        $this->assertArrayNotHasKey('mito\sentry\assets\RavenAsset', Yii::$app->view->assetBundles);
     }
 
     public function testComponentIsEnabledThenRegisterAssets()
     {
         $this->setSentryComponent();
 
-        $this->assertArrayHasKey('mito\sentry\assets\RavenAsset', Yii::$app->view->assetManager->bundles);
+        $this->assertArrayHasKey('mito\sentry\assets\RavenAsset', Yii::$app->view->assetBundles);
+    }
+
+    public function testDoNotRegisterAssetsIfApplicationIsConsoleApplication()
+    {
+        $this->setSentryComponent([], self::APP_CONSOLE);
+
+        $this->assertArrayNotHasKey('mito\sentry\assets\RavenAsset', Yii::$app->view->assetBundles);
     }
 }

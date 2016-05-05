@@ -15,7 +15,6 @@ use yii\log\Logger;
 
 class SentryTargetTest extends TestCase
 {
-
     const EXCEPTION_TYPE_OBJECT = 'object';
     const EXCEPTION_TYPE_MSG = 'message';
     const EXCEPTION_TYPE_STRING = 'string';
@@ -45,18 +44,24 @@ class SentryTargetTest extends TestCase
         $this->setSentryTarget();
     }
 
-    public function testComponentIsDisabledAndTargetIsSetThenTheApplicationDoesNotCrashIfErrorOccurs()
+    /**
+     * @dataProvider applications
+     */
+    public function testComponentIsDisabledAndTargetIsSetThenTheApplicationDoesNotCrashIfErrorOccurs($application)
     {
-        $this->setSentryComponent(['enabled' => false]);
+        $this->setSentryComponent(['enabled' => false], $application);
 
         $logger = $this->getLogger();
         $logger->log(str_repeat('x', 1024), Logger::LEVEL_ERROR);
         $logger->flush(true);
     }
 
-    public function testRavenClientExists()
+    /**
+     * @dataProvider applications
+     */
+    public function testRavenClientExists($application)
     {
-        $this->setSentryTarget();
+        $this->setSentryTarget([], [], $application);
 
         $this->assertInstanceOf('\Raven_Client', \Yii::$app->sentry->client);
     }
@@ -86,15 +91,42 @@ class SentryTargetTest extends TestCase
             [['categories' => ['application', 'yii.db.*'], 'levels' => Logger::LEVEL_ERROR], ['B', 'G', 'H']],
             [['categories' => ['application'], 'levels' => Logger::LEVEL_ERROR], ['B']],
             [['categories' => ['application'], 'levels' => Logger::LEVEL_ERROR | Logger::LEVEL_WARNING], ['B', 'C']],
+            // console
+            [[], ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'], self::APP_CONSOLE],
+            [['levels' => 0], ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'], self::APP_CONSOLE],
+            [
+                ['levels' => Logger::LEVEL_INFO | Logger::LEVEL_WARNING | Logger::LEVEL_ERROR | Logger::LEVEL_TRACE],
+                ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'],
+                self::APP_CONSOLE
+            ],
+            [['levels' => ['error']], ['B', 'G', 'H'], self::APP_CONSOLE],
+            [['levels' => Logger::LEVEL_ERROR], ['B', 'G', 'H'], self::APP_CONSOLE],
+            [['levels' => ['error', 'warning']], ['B', 'C', 'G', 'H'], self::APP_CONSOLE],
+            [['levels' => Logger::LEVEL_ERROR | Logger::LEVEL_WARNING], ['B', 'C', 'G', 'H'], self::APP_CONSOLE],
+            [['categories' => ['application']], ['A', 'B', 'C', 'D', 'E'], self::APP_CONSOLE],
+            [['categories' => ['application*']], ['A', 'B', 'C', 'D', 'E', 'F'], self::APP_CONSOLE],
+            [['categories' => ['application.*']], ['F'], self::APP_CONSOLE],
+            [['categories' => ['application.components']], [], self::APP_CONSOLE],
+            [['categories' => ['application.components.Test']], ['F'], self::APP_CONSOLE],
+            [['categories' => ['application.components.*']], ['F'], self::APP_CONSOLE],
+            [['categories' => ['application.*', 'yii.db.*']], ['F', 'G', 'H'], self::APP_CONSOLE],
+            [['categories' => ['application.*', 'yii.db.*'], 'except' => ['yii.db.Command.*']], ['F', 'G'], self::APP_CONSOLE],
+            [['categories' => ['application', 'yii.db.*'], 'levels' => Logger::LEVEL_ERROR], ['B', 'G', 'H'], self::APP_CONSOLE],
+            [['categories' => ['application'], 'levels' => Logger::LEVEL_ERROR], ['B'], self::APP_CONSOLE],
+            [['categories' => ['application'], 'levels' => Logger::LEVEL_ERROR | Logger::LEVEL_WARNING], ['B', 'C'], self::APP_CONSOLE],
         ];
     }
 
     /**
      * @dataProvider filters
+     *
+     * @param $filter
+     * @param $expected
+     * @param string $application
      */
-    public function testFilter($filter, $expected)
+    public function testFilter($filter, $expected, $application = self::APP_WEB)
     {
-        $this->setSentryTarget();
+        $this->setSentryTarget([], [], $application);
 
         $logger = new Logger();
         $dispatcher = new Dispatcher([
@@ -134,15 +166,31 @@ class SentryTargetTest extends TestCase
             'catch code 403' => [['except' => ['yii\web\HttpException:404']], 403, 1, self::EXCEPTION_TYPE_OBJECT],
             'catch code 500' => [['except' => ['yii\web\HttpException:404']], 500, 1, self::EXCEPTION_TYPE_MSG],
             'catch code 503' => [['except' => ['yii\web\HttpException:404']], 503, 1, self::EXCEPTION_TYPE_STRING],
+            //console
+            'skip code 404 @console' => [['except' => ['yii\web\HttpException:404']], 404, 0, self::EXCEPTION_TYPE_OBJECT, self::APP_CONSOLE],
+            'skip http * @console' => [['except' => ['yii\web\HttpException:*']], 403, 0, self::EXCEPTION_TYPE_MSG, self::APP_CONSOLE],
+            'catch code 0 @console' => [['except' => ['yii\web\HttpException:404']], 0, 1, self::EXCEPTION_TYPE_STRING, self::APP_CONSOLE],
+            'catch code 400 @console' => [['except' => ['yii\web\HttpException:404']], 400, 1, self::EXCEPTION_TYPE_OBJECT, self::APP_CONSOLE],
+            'catch code 401 @console' => [['except' => ['yii\web\HttpException:404']], 401, 1, self::EXCEPTION_TYPE_MSG, self::APP_CONSOLE],
+            'catch code 402 @console' => [['except' => ['yii\web\HttpException:404']], 402, 1, self::EXCEPTION_TYPE_STRING, self::APP_CONSOLE],
+            'catch code 403 @console' => [['except' => ['yii\web\HttpException:404']], 403, 1, self::EXCEPTION_TYPE_OBJECT, self::APP_CONSOLE],
+            'catch code 500 @console' => [['except' => ['yii\web\HttpException:404']], 500, 1, self::EXCEPTION_TYPE_MSG, self::APP_CONSOLE],
+            'catch code 503 @console' => [['except' => ['yii\web\HttpException:404']], 503, 1, self::EXCEPTION_TYPE_STRING, self::APP_CONSOLE],
         ];
     }
 
     /**
      * @dataProvider exceptions
+     *
+     * @param $except
+     * @param $exceptionCode
+     * @param $expectedNumberOfLogs
+     * @param $type
+     * @param string $application
      */
-    public function testExceptions($except, $exceptionCode, $expectedNumberOfLogs, $type)
+    public function testExceptions($except, $exceptionCode, $expectedNumberOfLogs, $type, $application = self::APP_WEB)
     {
-        $this->setSentryTarget();
+        $this->setSentryTarget([], [], $application);
 
         $logger = new Logger();
         $dispatcher = new Dispatcher([
@@ -157,7 +205,7 @@ class SentryTargetTest extends TestCase
         } catch (\Exception $e) {
 
             $exception = $e;
-            switch($type){
+            switch ($type) {
                 case self::EXCEPTION_TYPE_MSG:
                     $exception = ['msg' => $e->getMessage()];
                     break;
