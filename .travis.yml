@@ -1,7 +1,6 @@
 language: php
 
 php:
-  - 5.4
   - 5.5
   - 5.6
   - 7.0
@@ -24,15 +23,11 @@ install:
 before_script:
   - |
     if [ $TRAVIS_PHP_VERSION = '5.6' ]; then
-      PHPUNIT_FLAGS="--coverage --coverage-xml --coverage-html"
+      PHPUNIT_FLAGS="--coverage --coverage-xml"
     fi
 
 script:
-  - php ./vendor/codeception/codeception/codecept run unit $PHPUNIT_FLAGS
+  - php ./vendor/bin/codecept run unit -d $PHPUNIT_FLAGS
 
-after_script:
-  - |
-    if [ $TRAVIS_PHP_VERSION = '5.6' ]; then
-      travis_retry wget https://scrutinizer-ci.com/ocular.phar
-      php ocular.phar code-coverage:upload --format=php-clover coverage.clover
-    fi
+after_success:
+  - php ./vendor/bin/coveralls -v --exclude-no-stmt -c .coveralls.yml
