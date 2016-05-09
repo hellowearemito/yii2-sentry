@@ -68,8 +68,9 @@ class SentryTarget extends Target
 
             $extra = [];
             if ($context instanceof \Exception) {
-                $this->client->captureException($context);
+                $this->capturedMessages[] = $this->client->captureException($context);
                 $description = $context->getMessage();
+                continue;
             } elseif (isset($context['msg'])) {
                 $description = $context['msg'];
                 $extra = $context;
