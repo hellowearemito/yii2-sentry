@@ -46,8 +46,8 @@ abstract class TestCase extends \yii\codeception\TestCase
     public function applications()
     {
         return [
-            [self::APP_WEB],
-            [self::APP_CONSOLE],
+            'web app' => [self::APP_WEB],
+            'console app' => [self::APP_CONSOLE],
         ];
     }
 

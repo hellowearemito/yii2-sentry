@@ -47,7 +47,7 @@ class SentryTargetTest extends TestCase
     /**
      * @dataProvider applications
      */
-    public function testComponentIsDisabledAndTargetIsSetThenTheApplicationDoesNotCrashIfErrorOccurs($application)
+    public function testDontCrashIfComponentIsDisabled($application)
     {
         $this->setSentryComponent(['enabled' => false], $application);
 

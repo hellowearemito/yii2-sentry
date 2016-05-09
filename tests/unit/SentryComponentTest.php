@@ -15,7 +15,7 @@ class SentryComponentTest extends TestCase
     /**
      * @dataProvider applications
      */
-    public function testComponentIsNotEnabledAndDsnIsNotSetThenTheApplicationDoesNotCrash($application)
+    public function testDontCrashIfNotEnabledAndNullDSN($application)
     {
         $this->setSentryComponent([
             'enabled' => false,
@@ -28,7 +28,7 @@ class SentryComponentTest extends TestCase
     /**
      * @dataProvider applications
      */
-    public function testComponentIsEnabledThenRavenClientExists($application)
+    public function testRavenClientExistsWhenComponentIsEnabled($application)
     {
         $this->setSentryComponent([], $application);
 
@@ -39,7 +39,7 @@ class SentryComponentTest extends TestCase
      * @dataProvider applications
      * @expectedException \yii\base\InvalidConfigException
      */
-    public function testComponentIsEnabledAndDsnIsNotSetThenTheApplicationCrash($application)
+    public function testInvalidConfigExceptionIfDsnIsNotSet($application)
     {
         $this->setSentryComponent([
             'dsn' => null,
@@ -91,7 +91,7 @@ class SentryComponentTest extends TestCase
     /**
      * @dataProvider applications
      */
-    public function testIfPublicDsnSetThenJsNotifierIsEnabled($application)
+    public function testJsNotifierEnabledIfPublicDsnSet($application)
     {
         $this->setSentryComponent([
             'publicDsn' => 'https://65b4cf757v9kx53ja583f038bb1a07d6@getsentry.com/1',
@@ -104,7 +104,7 @@ class SentryComponentTest extends TestCase
     /**
      * @dataProvider applications
      */
-    public function testIfPublicDsnEmptyAndJsNotifierFalse($application)
+    public function testAssetNotRegisteredIfJsNotifierIsFalseAndPublicDsnIsEmpty($application)
     {
         $this->setSentryComponent([
             'publicDsn' => '',
@@ -117,7 +117,7 @@ class SentryComponentTest extends TestCase
     /**
      * @dataProvider applications
      */
-    public function testIfPublicDsnIsNotSetAndJsNotifierIsFalseThenDoNotRegisterAssets($application)
+    public function testAssetNotRegisteredIfJsNotifierIsFalse($application)
     {
         $this->setSentryComponent([
             'jsNotifier' => false,
@@ -129,7 +129,7 @@ class SentryComponentTest extends TestCase
     /**
      * @dataProvider applications
      */
-    public function testComponentIsNotEnabledThenDoNotRegisterAssets($application)
+    public function testAssetNotRegisteredIfComponentIsNotEnabled($application)
     {
         $this->setSentryComponent([
             'enabled' => false,
@@ -138,7 +138,7 @@ class SentryComponentTest extends TestCase
         $this->assertArrayNotHasKey('mito\sentry\assets\RavenAsset', Yii::$app->view->assetBundles);
     }
 
-    public function testComponentIsEnabledThenRegisterAssets()
+    public function testRegisterAssetIfComponentIsEnabled()
     {
         $this->setSentryComponent();
 
