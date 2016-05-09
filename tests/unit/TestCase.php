@@ -25,7 +25,7 @@ abstract class TestCase extends \yii\codeception\TestCase
 
     public $appConfig = '@mitosentry/tests/unit/config/main.php';
 
-    protected $sentryComponentConfig = [
+    private $sentryComponentConfig = [
         'class' => '\mito\sentry\SentryComponent',
         'ravenClass' => '\Dummy_Raven_Client',
         'enabled' => true,
@@ -33,7 +33,7 @@ abstract class TestCase extends \yii\codeception\TestCase
         'jsNotifier' => true,
     ];
 
-    protected $sentryTargetConfig = [
+    private $sentryTargetConfig = [
         'class' => '\mito\sentry\SentryTarget',
         'levels' => ['error', 'warning'],
         'except' => [

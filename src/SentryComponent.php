@@ -37,7 +37,7 @@ class SentryComponent extends Component
     public $environment = 'development';
 
     /**
-     * @var array Options of the \Raven_Client.
+     * @var array Options of the Raven client.
      * @see \Raven_Client::__construct for more details
      */
     public $options = [];
@@ -50,7 +50,7 @@ class SentryComponent extends Component
     public $jsNotifier = false;
 
     /**
-     * @var string
+     * @var string Raven client class
      */
     public $ravenClass = '\Raven_Client';
 
@@ -63,7 +63,7 @@ class SentryComponent extends Component
     public $clientOptions = [];
 
     /**
-     * @var \Raven_Client
+     * @var \Raven_Client Raven client
      */
     protected $client;
 
@@ -110,6 +110,21 @@ class SentryComponent extends Component
             RavenAsset::register(Yii::$app->getView());
             Yii::$app->getView()->registerJs('Raven.config(' . Json::encode($this->publicDsn) . ', ' . Json::encode($this->clientOptions) . ').install();', View::POS_HEAD);
         }
+    }
+
+    public function captureMessage($message, $params, $levelOrOptions = [], $stack = false, $vars = null)
+    {
+        return $this->client->captureMessage($message, $params, $levelOrOptions, $stack, $vars);
+    }
+
+    public function captureException($exception, $culpritOrOptions = null, $logger = null, $vars = null)
+    {
+        return $this->client->captureException($exception, $culpritOrOptions, $logger, $vars);
+    }
+
+    public function capture($data, $stack = null, $vars = null)
+    {
+        return $this->client->capture($data, $stack, $vars);
     }
 
     /**
