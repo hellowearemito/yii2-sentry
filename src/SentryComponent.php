@@ -79,6 +79,13 @@ class SentryComponent extends Component
             throw new InvalidConfigException('Private or public DSN must be set!');
         }
 
+        if ($this->publicDsn === null && $this->jsNotifier === true) {
+            $this->publicDsn = preg_replace('/^(https:\/\/|http:\/\/)([a-z0-9]*):([a-z0-9]*)@(.*)/', '$1$2@$4', $this->dsn);
+        }
+        if (!empty($this->publicDsn)) {
+            $this->jsNotifier = true;
+        }
+
         $this->client = new $this->ravenClass($this->dsn, $this->options);
 
         $this->registerAssets();
@@ -99,14 +106,9 @@ class SentryComponent extends Component
      */
     private function registerAssets()
     {
-        /** to keep BC */
-        if (!empty($this->publicDsn)) {
-            $this->jsNotifier = true;
-        }
-
         if ($this->jsNotifier && Yii::$app instanceof \yii\web\Application) {
             RavenAsset::register(Yii::$app->getView());
-            Yii::$app->getView()->registerJs('Raven.config(' . Json::encode($this->getPublicDsn()) . ', ' . Json::encode($this->clientOptions) . ').install();', View::POS_HEAD);
+            Yii::$app->getView()->registerJs('Raven.config(' . Json::encode($this->publicDsn) . ', ' . Json::encode($this->clientOptions) . ').install();', View::POS_HEAD);
         }
     }
 
@@ -118,8 +120,12 @@ class SentryComponent extends Component
         return $this->client;
     }
 
+    /**
+     * @return string public dsn
+     * @deprecated use [[$publicDsn]]
+     */
     public function getPublicDsn()
     {
-        return preg_replace('/^(https:\/\/|http:\/\/)([a-z0-9]*):([a-z0-9]*)@(.*)/', '$1$2@$4', $this->dsn);
+        return $this->publicDsn;
     }
 }

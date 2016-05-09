@@ -93,12 +93,15 @@ class SentryComponentTest extends TestCase
      */
     public function testJsNotifierEnabledIfPublicDsnSet($application)
     {
+        $publicDsn = 'https://45b4cf757v9kx53ja583f038bb1a07d6@getsentry.com/1';
         $this->setSentryComponent([
-            'publicDsn' => 'https://65b4cf757v9kx53ja583f038bb1a07d6@getsentry.com/1',
+            'publicDsn' => $publicDsn,
             'jsNotifier' => false,
         ], $application);
 
         $this->assertTrue(Yii::$app->sentry->jsNotifier);
+        $this->assertEquals($publicDsn, Yii::$app->sentry->publicDsn);
+        $this->assertEquals(Yii::$app->sentry->publicDsn, Yii::$app->sentry->getPublicDsn());
     }
 
     /**
