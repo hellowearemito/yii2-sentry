@@ -20,6 +20,8 @@ abstract class TestCase extends \yii\codeception\TestCase
 {
     const APP_CONSOLE = '\yii\console\Application';
     const APP_WEB = '\yii\web\Application';
+    const PRIVATE_DSN = 'https://65b4cf757v9kx53ja583f038bb1a07d6:cda7d637fb7kd85nch39c4445cf47126@getsentry.com/1';
+    const PUBLIC_DSN = 'https://65b4cf757v9kx53ja583f038bb1a07d6@getsentry.com/1';
 
     public $appConfig = '@mitosentry/tests/unit/config/main.php';
 
@@ -27,7 +29,7 @@ abstract class TestCase extends \yii\codeception\TestCase
         'class' => '\mito\sentry\SentryComponent',
         'ravenClass' => '\Dummy_Raven_Client',
         'enabled' => true,
-        'dsn' => 'https://65b4cf757v9kx53ja583f038bb1a07d6:cda7d637fb7kd85nch39c4445cf47126@getsentry.com/1',
+        'dsn' => self::PRIVATE_DSN,
         'jsNotifier' => true,
     ];
 
