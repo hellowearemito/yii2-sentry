@@ -101,6 +101,7 @@ class SentryComponentTest extends \yii\codeception\TestCase
         $this->assertEquals('value', $component->client->tags['test']);
         $this->assertArrayHasKey('environment', $component->client->tags);
         $this->assertEquals('development', $component->client->tags['environment']);
+        $this->assertEquals($component->client, $component->getClient());
     }
 
     public function testCapture()
