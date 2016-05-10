@@ -22,23 +22,26 @@ class SentryComponent extends Component
 
     /**
      * @var string Sentry DSN
+     * @note this is ignored if [[client]] is a Raven client instance.
      */
     public $dsn;
 
     /**
      * @var string public Sentry DSN for raven-js
-     * @deprecated since version 0.4.0
+     * If not set, this is generated from the private dsn.
      */
     public $publicDsn;
 
     /**
      * @var string environment name
+     * @note this is ignored if [[client]] is a Raven client instance.
      */
     public $environment = 'development';
 
     /**
      * @var array Options of the Raven client.
      * @see \Raven_Client::__construct for more details
+     * @deprecated use [[client]] instead
      */
     public $options = [];
 
@@ -50,22 +53,32 @@ class SentryComponent extends Component
     public $jsNotifier = false;
 
     /**
-     * @var string Raven client class
+     * Raven-JS configuration array
+     *
+     * @var array
+     * @see https://docs.getsentry.com/hosted/clients/javascript/config/
      */
-    public $ravenClass = '\Raven_Client';
+    public $jsOptions;
 
     /**
      * Raven-JS configuration array
      *
      * @var array
      * @see https://docs.getsentry.com/hosted/clients/javascript/config/
+     * @deprecated use [[jsOptions]] instead
      */
     public $clientOptions = [];
 
     /**
-     * @var \Raven_Client Raven client
+     * @var string Raven client class
+     * @deprecated use [[client]] instead
      */
-    protected $client;
+    public $ravenClass = '\Raven_Client';
+
+    /**
+     * @var \Raven_Client|array Raven client or configuration array used to instantiate one
+     */
+    public $client;
 
     public function init()
     {
@@ -73,7 +86,14 @@ class SentryComponent extends Component
             return;
         }
 
+        if ($this->jsOptions === null) {
+            $this->jsOptions = $this->clientOptions;
+        }
+
         $this->setEnvironmentOptions();
+
+        // for backwards compatibility
+        $this->clientOptions = $this->jsOptions;
 
         if (empty($this->dsn)) {
             throw new InvalidConfigException('Private or public DSN must be set!');
@@ -86,7 +106,15 @@ class SentryComponent extends Component
             $this->jsNotifier = true;
         }
 
-        $this->client = new $this->ravenClass($this->dsn, $this->options);
+        if (is_array($this->client)) {
+            $ravenClass = $this->client['class'];
+            $options = $this->client;
+            unset($options['class']);
+            $this->client = new $ravenClass($this->dsn, $options);
+        } elseif (empty($this->client)) {
+            // deprecated codepath
+            $this->client = new $this->ravenClass($this->dsn, $this->options);
+        }
 
         $this->registerAssets();
     }
@@ -97,8 +125,11 @@ class SentryComponent extends Component
             return;
         }
 
+        if (is_array($this->client)) {
+            $this->client['tags']['environment'] = $this->environment;
+        }
         $this->options['tags']['environment'] = $this->environment;
-        $this->clientOptions['tags']['environment'] = $this->environment;
+        $this->jsOptions['tags']['environment'] = $this->environment;
     }
 
     /**
@@ -108,7 +139,7 @@ class SentryComponent extends Component
     {
         if ($this->jsNotifier && Yii::$app instanceof \yii\web\Application) {
             RavenAsset::register(Yii::$app->getView());
-            Yii::$app->getView()->registerJs('Raven.config(' . Json::encode($this->publicDsn) . ', ' . Json::encode($this->clientOptions) . ').install();', View::POS_HEAD);
+            Yii::$app->getView()->registerJs('Raven.config(' . Json::encode($this->publicDsn) . ', ' . Json::encode($this->jsOptions) . ').install();', View::POS_HEAD);
         }
     }
 
@@ -129,6 +160,7 @@ class SentryComponent extends Component
 
     /**
      * @return \Raven_Client
+     * @deprecated use [[$client]]
      */
     public function getClient()
     {

@@ -12,8 +12,8 @@ namespace mito\sentry\tests\unit;
 use mito\sentry\SentryTarget;
 use mito\sentry\SentryComponent;
 use yii\log\Logger;
-use Yii;
 use yii\helpers\ArrayHelper;
+use Yii;
 use Mockery;
 
 class SentryTargetTest extends \yii\codeception\TestCase
