@@ -10,60 +10,150 @@ namespace mito\sentry\tests\unit;
 
 
 use mito\sentry\SentryTarget;
-use yii\log\Dispatcher;
+use mito\sentry\SentryComponent;
 use yii\log\Logger;
+use yii\helpers\ArrayHelper;
+use Yii;
+use Mockery;
 
-class SentryTargetTest extends TestCase
+class SentryTargetTest extends \yii\codeception\TestCase
 {
     const EXCEPTION_TYPE_OBJECT = 'object';
     const EXCEPTION_TYPE_MSG = 'message';
     const EXCEPTION_TYPE_STRING = 'string';
 
-    protected function getLogger()
+    public $appConfig = '@mitosentry/tests/unit/config/main.php';
+
+    protected function mockSentryTarget($options = [])
     {
-        $logger = new Logger();
-        $dispatcher = new Dispatcher([
-            'logger' => $logger,
-            'targets' => [
-                'sentry' => [
-                    'class' => '\mito\sentry\SentryTarget',
-                    'levels' => ['error', 'warning'],
-                    'except' => [
-                        'yii\web\HttpException:404',
-                    ],
-                ],
-            ],
+        $component = Mockery::mock(SentryComponent::className());
+
+        return Yii::createObject(ArrayHelper::merge([
+            'class' => SentryTarget::className(),
+            'sentry' => $component,
+        ], $options));
+    }
+
+    protected function mockLogger($target)
+    {
+        $dispatcher = new TestDispatcher([
+            'targets' => [$target],
+        ]);
+        $logger = new Logger([
+            'dispatcher' => $dispatcher,
         ]);
 
         return $logger;
     }
 
-    /** smoke test */
-    public function testTargetExists()
+    public function testDontCrashIfComponentIsDisabled()
     {
-        $this->setSentryTarget();
-    }
-
-    /**
-     * @dataProvider applications
-     */
-    public function testComponentIsDisabledAndTargetIsSetThenTheApplicationDoesNotCrashIfErrorOccurs($application)
-    {
-        $this->setSentryComponent(['enabled' => false], $application);
-
-        $logger = $this->getLogger();
+        // Attempting to call any method on sentryComponent will throw an exception.
+        // If the component is disabled, SentryTarget should not call any methods on
+        // SentryComponent.
+        $component = Mockery::mock(SentryComponent::className());
+        $component->enabled = false;
+        $target = $this->mockSentryTarget([
+            'sentry' => $component,
+        ]);
+        $logger = $this->mockLogger($target);
         $logger->log(str_repeat('x', 1024), Logger::LEVEL_ERROR);
         $logger->flush(true);
     }
 
     /**
-     * @dataProvider applications
+     * @dataProvider filters
+     *
+     * @param $filter
+     * @param $expected
+     * @param string $application
      */
-    public function testRavenClientExists($application)
+    public function testFilter($filter, $expected)
     {
-        $this->setSentryTarget([], [], $application);
+        $target = $this->mockSentryTarget($filter);
+        $logger = $this->mockLogger($target);
+        foreach ($expected as $message) {
+            $target->sentry->shouldReceive('capture')
+                ->with(Mockery::on(function($data) use ($message) {
+                    return $data['message'] === $message;
+                }), Mockery::on(function($traces) {
+                    return true;
+                }))->once();
+        }
 
-        $this->assertInstanceOf('\Raven_Client', \Yii::$app->sentry->client);
+        $logger->log('A', Logger::LEVEL_INFO);
+        $logger->log('B', Logger::LEVEL_ERROR);
+        $logger->log('C', Logger::LEVEL_WARNING);
+        $logger->log('D', Logger::LEVEL_TRACE);
+        $logger->log('E', Logger::LEVEL_INFO, 'application');
+        $logger->log('F', Logger::LEVEL_INFO, 'application.components.Test');
+        $logger->log('G', Logger::LEVEL_ERROR, 'yii.db.Command');
+        $logger->log('H', Logger::LEVEL_ERROR, 'yii.db.Command.whatever');
+
+        $logger->flush(true);
+    }
+
+    /**
+     * @dataProvider exceptions
+     *
+     * @param $except
+     * @param $exceptionCode
+     * @param $expectLogged
+     * @param $type
+     * @param string $application
+     */
+    public function testExceptions($except, $exceptionCode, $expectLogged, $type)
+    {
+        $target = $this->mockSentryTarget($except);
+        $logger = $this->mockLogger($target);
+
+        if ($expectLogged) {
+            if ($type === self::EXCEPTION_TYPE_OBJECT) {
+                $target->sentry->shouldReceive('captureException')
+                    ->with(Mockery::on(function($exception) {
+                        return $exception instanceof \Exception && $exception->getMessage() === 'message';
+                    }), Mockery::on(function($data) {
+                        return true;
+                    }))->once();
+            } else {
+                $target->sentry->shouldReceive('capture')
+                    ->with(Mockery::on(function($data) {
+                        return $data['message'] === 'message';
+                    }), Mockery::on(function($traces) {
+                        return true;
+                    }))->once();
+            }
+        } else {
+            $target->sentry->shouldNotReceive('capture');
+            $target->sentry->shouldNotReceive('captureException');
+            $target->sentry->shouldNotReceive('captureMessage');
+        }
+        $target->sentry->shouldReceive('capture')
+            ->with(Mockery::on(function($data) {
+                return $data['message'] === 'sentinel';
+            }), Mockery::on(function($traces) {
+                return true;
+            }))->once();
+
+        try {
+            throw new \Exception('message', $exceptionCode);
+        } catch (\Exception $e) {
+
+            $exception = $e;
+            switch ($type) {
+                case self::EXCEPTION_TYPE_MSG:
+                    $exception = ['msg' => $e->getMessage()];
+                    break;
+                case self::EXCEPTION_TYPE_STRING:
+                    $exception = $e->getMessage();
+                    break;
+            }
+
+            $logger->log($exception, Logger::LEVEL_ERROR, 'yii\web\HttpException:' . $exceptionCode);
+        }
+        $logger->log('sentinel', Logger::LEVEL_INFO);
+
+        $logger->flush(true);
     }
 
     public function filters()
@@ -92,137 +182,42 @@ class SentryTargetTest extends TestCase
             [['categories' => ['application'], 'levels' => Logger::LEVEL_ERROR], ['B']],
             [['categories' => ['application'], 'levels' => Logger::LEVEL_ERROR | Logger::LEVEL_WARNING], ['B', 'C']],
             // console
-            [[], ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'], self::APP_CONSOLE],
-            [['levels' => 0], ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'], self::APP_CONSOLE],
+            [[], ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H']],
+            [['levels' => 0], ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H']],
             [
                 ['levels' => Logger::LEVEL_INFO | Logger::LEVEL_WARNING | Logger::LEVEL_ERROR | Logger::LEVEL_TRACE],
-                ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'],
-                self::APP_CONSOLE
+                ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H']
             ],
-            [['levels' => ['error']], ['B', 'G', 'H'], self::APP_CONSOLE],
-            [['levels' => Logger::LEVEL_ERROR], ['B', 'G', 'H'], self::APP_CONSOLE],
-            [['levels' => ['error', 'warning']], ['B', 'C', 'G', 'H'], self::APP_CONSOLE],
-            [['levels' => Logger::LEVEL_ERROR | Logger::LEVEL_WARNING], ['B', 'C', 'G', 'H'], self::APP_CONSOLE],
-            [['categories' => ['application']], ['A', 'B', 'C', 'D', 'E'], self::APP_CONSOLE],
-            [['categories' => ['application*']], ['A', 'B', 'C', 'D', 'E', 'F'], self::APP_CONSOLE],
-            [['categories' => ['application.*']], ['F'], self::APP_CONSOLE],
-            [['categories' => ['application.components']], [], self::APP_CONSOLE],
-            [['categories' => ['application.components.Test']], ['F'], self::APP_CONSOLE],
-            [['categories' => ['application.components.*']], ['F'], self::APP_CONSOLE],
-            [['categories' => ['application.*', 'yii.db.*']], ['F', 'G', 'H'], self::APP_CONSOLE],
-            [['categories' => ['application.*', 'yii.db.*'], 'except' => ['yii.db.Command.*']], ['F', 'G'], self::APP_CONSOLE],
-            [['categories' => ['application', 'yii.db.*'], 'levels' => Logger::LEVEL_ERROR], ['B', 'G', 'H'], self::APP_CONSOLE],
-            [['categories' => ['application'], 'levels' => Logger::LEVEL_ERROR], ['B'], self::APP_CONSOLE],
-            [['categories' => ['application'], 'levels' => Logger::LEVEL_ERROR | Logger::LEVEL_WARNING], ['B', 'C'], self::APP_CONSOLE],
+            [['levels' => ['error']], ['B', 'G', 'H']],
+            [['levels' => Logger::LEVEL_ERROR], ['B', 'G', 'H']],
+            [['levels' => ['error', 'warning']], ['B', 'C', 'G', 'H']],
+            [['levels' => Logger::LEVEL_ERROR | Logger::LEVEL_WARNING], ['B', 'C', 'G', 'H']],
+            [['categories' => ['application']], ['A', 'B', 'C', 'D', 'E']],
+            [['categories' => ['application*']], ['A', 'B', 'C', 'D', 'E', 'F']],
+            [['categories' => ['application.*']], ['F']],
+            [['categories' => ['application.components']], []],
+            [['categories' => ['application.components.Test']], ['F']],
+            [['categories' => ['application.components.*']], ['F']],
+            [['categories' => ['application.*', 'yii.db.*']], ['F', 'G', 'H']],
+            [['categories' => ['application.*', 'yii.db.*'], 'except' => ['yii.db.Command.*']], ['F', 'G']],
+            [['categories' => ['application', 'yii.db.*'], 'levels' => Logger::LEVEL_ERROR], ['B', 'G', 'H']],
+            [['categories' => ['application'], 'levels' => Logger::LEVEL_ERROR], ['B']],
+            [['categories' => ['application'], 'levels' => Logger::LEVEL_ERROR | Logger::LEVEL_WARNING], ['B', 'C']],
         ];
-    }
-
-    /**
-     * @dataProvider filters
-     *
-     * @param $filter
-     * @param $expected
-     * @param string $application
-     */
-    public function testFilter($filter, $expected, $application = self::APP_WEB)
-    {
-        $this->setSentryTarget([], [], $application);
-
-        $logger = new Logger();
-        $dispatcher = new Dispatcher([
-            'logger' => $logger,
-            'targets' => [
-                'sentry' => new SentryTarget(array_merge($filter, ['logVars' => []])),
-            ],
-        ]);
-
-        $logger->log('testA', Logger::LEVEL_INFO);
-        $logger->log('testB', Logger::LEVEL_ERROR);
-        $logger->log('testC', Logger::LEVEL_WARNING);
-        $logger->log('testD', Logger::LEVEL_TRACE);
-        $logger->log('testE', Logger::LEVEL_INFO, 'application');
-        $logger->log('testF', Logger::LEVEL_INFO, 'application.components.Test');
-        $logger->log('testG', Logger::LEVEL_ERROR, 'yii.db.Command');
-        $logger->log('testH', Logger::LEVEL_ERROR, 'yii.db.Command.whatever');
-
-        $logger->flush(true);
-
-        /** @var \mito\sentry\SentryTarget $sentryTarget */
-        $sentryTarget = $logger->dispatcher->targets['sentry'];
-        $messages = $sentryTarget->getCapturedMessages();
-
-        $this->assertEquals(count($expected), count($messages));
     }
 
     public function exceptions()
     {
         return [
-            'skip code 404' => [['except' => ['yii\web\HttpException:404']], 404, 0, self::EXCEPTION_TYPE_OBJECT],
-            'skip http *' => [['except' => ['yii\web\HttpException:*']], 403, 0, self::EXCEPTION_TYPE_MSG],
-            'catch code 0' => [['except' => ['yii\web\HttpException:404']], 0, 1, self::EXCEPTION_TYPE_STRING],
-            'catch code 400' => [['except' => ['yii\web\HttpException:404']], 400, 1, self::EXCEPTION_TYPE_OBJECT],
-            'catch code 401' => [['except' => ['yii\web\HttpException:404']], 401, 1, self::EXCEPTION_TYPE_MSG],
-            'catch code 402' => [['except' => ['yii\web\HttpException:404']], 402, 1, self::EXCEPTION_TYPE_STRING],
-            'catch code 403' => [['except' => ['yii\web\HttpException:404']], 403, 1, self::EXCEPTION_TYPE_OBJECT],
-            'catch code 500' => [['except' => ['yii\web\HttpException:404']], 500, 1, self::EXCEPTION_TYPE_MSG],
-            'catch code 503' => [['except' => ['yii\web\HttpException:404']], 503, 1, self::EXCEPTION_TYPE_STRING],
-            //console
-            'skip code 404 @console' => [['except' => ['yii\web\HttpException:404']], 404, 0, self::EXCEPTION_TYPE_OBJECT, self::APP_CONSOLE],
-            'skip http * @console' => [['except' => ['yii\web\HttpException:*']], 403, 0, self::EXCEPTION_TYPE_MSG, self::APP_CONSOLE],
-            'catch code 0 @console' => [['except' => ['yii\web\HttpException:404']], 0, 1, self::EXCEPTION_TYPE_STRING, self::APP_CONSOLE],
-            'catch code 400 @console' => [['except' => ['yii\web\HttpException:404']], 400, 1, self::EXCEPTION_TYPE_OBJECT, self::APP_CONSOLE],
-            'catch code 401 @console' => [['except' => ['yii\web\HttpException:404']], 401, 1, self::EXCEPTION_TYPE_MSG, self::APP_CONSOLE],
-            'catch code 402 @console' => [['except' => ['yii\web\HttpException:404']], 402, 1, self::EXCEPTION_TYPE_STRING, self::APP_CONSOLE],
-            'catch code 403 @console' => [['except' => ['yii\web\HttpException:404']], 403, 1, self::EXCEPTION_TYPE_OBJECT, self::APP_CONSOLE],
-            'catch code 500 @console' => [['except' => ['yii\web\HttpException:404']], 500, 1, self::EXCEPTION_TYPE_MSG, self::APP_CONSOLE],
-            'catch code 503 @console' => [['except' => ['yii\web\HttpException:404']], 503, 1, self::EXCEPTION_TYPE_STRING, self::APP_CONSOLE],
+            'skip code 404' => [['except' => ['yii\web\HttpException:404']], 404, false, self::EXCEPTION_TYPE_OBJECT],
+            'skip http *' => [['except' => ['yii\web\HttpException:*']], 403, false, self::EXCEPTION_TYPE_MSG],
+            'catch code 0' => [['except' => ['yii\web\HttpException:404']], 0, true, self::EXCEPTION_TYPE_STRING],
+            'catch code 400' => [['except' => ['yii\web\HttpException:404']], 400, true, self::EXCEPTION_TYPE_OBJECT],
+            'catch code 401' => [['except' => ['yii\web\HttpException:404']], 401, true, self::EXCEPTION_TYPE_MSG],
+            'catch code 402' => [['except' => ['yii\web\HttpException:404']], 402, true, self::EXCEPTION_TYPE_STRING],
+            'catch code 403' => [['except' => ['yii\web\HttpException:404']], 403, true, self::EXCEPTION_TYPE_OBJECT],
+            'catch code 500' => [['except' => ['yii\web\HttpException:404']], 500, true, self::EXCEPTION_TYPE_MSG],
+            'catch code 503' => [['except' => ['yii\web\HttpException:404']], 503, true, self::EXCEPTION_TYPE_STRING],
         ];
-    }
-
-    /**
-     * @dataProvider exceptions
-     *
-     * @param $except
-     * @param $exceptionCode
-     * @param $expectedNumberOfLogs
-     * @param $type
-     * @param string $application
-     */
-    public function testExceptions($except, $exceptionCode, $expectedNumberOfLogs, $type, $application = self::APP_WEB)
-    {
-        $this->setSentryTarget([], [], $application);
-
-        $logger = new Logger();
-        $dispatcher = new Dispatcher([
-            'logger' => $logger,
-            'targets' => [
-                'sentry' => new SentryTarget(array_merge($except, ['logVars' => []])),
-            ],
-        ]);
-
-        try {
-            throw new \Exception('message', $exceptionCode);
-        } catch (\Exception $e) {
-
-            $exception = $e;
-            switch ($type) {
-                case self::EXCEPTION_TYPE_MSG:
-                    $exception = ['msg' => $e->getMessage()];
-                    break;
-                case self::EXCEPTION_TYPE_STRING:
-                    $exception = $e->getMessage();
-                    break;
-            }
-
-            $logger->log($exception, Logger::LEVEL_ERROR, 'yii\web\HttpException:' . $exceptionCode);
-        }
-
-        $logger->flush(true);
-
-        /** @var \mito\sentry\SentryTarget $sentryTarget */
-        $sentryTarget = $logger->dispatcher->targets['sentry'];
-        $messages = $sentryTarget->getCapturedMessages();
-
-        $this->assertEquals($expectedNumberOfLogs, count($messages));
     }
 }

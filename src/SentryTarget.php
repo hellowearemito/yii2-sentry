@@ -12,16 +12,9 @@ use yii\log\Target;
 class SentryTarget extends Target
 {
     /**
-     * @var \Raven_Client
-     */
-    protected $client;
-
-    /**
      * @var string|SentryComponent
      */
-    protected $sentry = 'sentry';
-
-    protected $capturedMessages = [];
+    public $sentry = 'sentry';
 
     /**
      * Initializes the object.
@@ -35,10 +28,8 @@ class SentryTarget extends Target
         $this->sentry = Instance::ensure($this->sentry, SentryComponent::className());
 
         if (!$this->sentry->enabled) {
-            return;
+            $this->enabled = false;
         }
-
-        $this->client = $this->sentry->getClient();
     }
 
     /**
@@ -57,44 +48,38 @@ class SentryTarget extends Target
      */
     public function export()
     {
-        if (!$this->sentry->enabled) {
-            return;
-        }
-
         foreach ($this->messages as $message) {
             list($context, $level, $category, $timestamp, $traces) = $message;
-
-            $description = $context;
-
-            $extra = [];
-            if ($context instanceof \Exception) {
-                $this->capturedMessages[] = $this->client->captureException($context);
-                continue;
-            } elseif (isset($context['msg'])) {
-                $description = $context['msg'];
-                $extra = $context;
-                unset($extra['msg']);
-            }
 
             $data = [
                 'level' => static::getLevelName($level),
                 'timestamp' => $timestamp,
-                'message' => $description,
-                'extra' => $extra,
                 'tags' => [
                     'category' => $category
                 ]
             ];
 
-            $this->capturedMessages[] = $this->client->capture($data, $traces);
+            if ($context instanceof \Exception) {
+                $this->sentry->captureException($context, $data);
+                continue;
+            } elseif (isset($context['msg'])) {
+                $data['message'] = $context['msg'];
+                $extra = $context;
+                unset($extra['msg']);
+                $data['extra'] = $extra;
+            } else {
+                $data['message'] = $context;
+            }
+
+            $this->sentry->capture($data, $traces);
         }
     }
 
     /**
-     * Returns the text display of the specified level for the Sentry.
+     * Maps a Yii Logger level to a Sentry log level.
      *
-     * @param integer $level The message level, e.g. [[LEVEL_ERROR]], [[LEVEL_WARNING]].
-     * @return string
+     * @param integer $level The message level, e.g. [[\yii\log\Logger::LEVEL_ERROR]], [[\yii\log\Logger::LEVEL_WARNING]].
+     * @return string Sentry log level.
      */
     public static function getLevelName($level)
     {
@@ -108,10 +93,5 @@ class SentryTarget extends Target
         ];
 
         return isset($levels[$level]) ? $levels[$level] : 'error';
-    }
-
-    public function getCapturedMessages()
-    {
-        return $this->capturedMessages;
     }
 }

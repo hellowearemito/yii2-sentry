@@ -2,59 +2,53 @@
 
 namespace mito\sentry\tests\unit;
 
-
-use Mockery;
-use Yii;
+use mito\sentry\SentryComponent;
 use yii\helpers\ArrayHelper;
-use yii\helpers\FileHelper;
-use yii\web\AssetManager;
-use yii\web\View;
+use Yii;
+use Mockery;
 
-class SentryComponentTest extends TestCase
+class SentryComponentTest extends \yii\codeception\TestCase
 {
-    /**
-     * @dataProvider applications
-     */
-    public function testComponentIsNotEnabledAndDsnIsNotSetThenTheApplicationDoesNotCrash($application)
+    const PRIVATE_DSN = 'https://65b4cf757v9kx53ja583f038bb1a07d6:cda7d637fb7kd85nch39c4445cf47126@getsentry.com/1';
+    const PUBLIC_DSN = 'https://65b4cf757v9kx53ja583f038bb1a07d6@getsentry.com/1';
+
+    public $appConfig = '@mitosentry/tests/unit/config/main.php';
+
+    private function mockSentryComponent($options = [])
     {
-        $this->setSentryComponent([
+        return Yii::createObject(ArrayHelper::merge([
+            'class' => SentryComponent::className(),
+            'enabled' => true,
+            'dsn' => self::PRIVATE_DSN,
+        ], $options));
+    }
+
+    public function testDontCrashIfNotEnabledAndNullDSN()
+    {
+        $this->mockSentryComponent([
             'enabled' => false,
             'dsn' => null,
-        ], $application);
-
-        $this->assertNotInstanceOf('\Raven_Client', Yii::$app->sentry->client);
+            'ravenClass' => 'mito\sentry\tests\unit\DummyRavenClient',
+        ]);
     }
 
-    /**
-     * @dataProvider applications
-     */
-    public function testComponentIsEnabledThenRavenClientExists($application)
+    public function testInvalidConfigExceptionIfDsnIsNotSet()
     {
-        $this->setSentryComponent([], $application);
-
-        $this->assertInstanceOf('\Raven_Client', Yii::$app->sentry->client);
-    }
-
-    /**
-     * @dataProvider applications
-     * @expectedException \yii\base\InvalidConfigException
-     */
-    public function testComponentIsEnabledAndDsnIsNotSetThenTheApplicationCrash($application)
-    {
-        $this->setSentryComponent([
+        $this->expectException(\yii\base\InvalidConfigException::class);
+        $this->mockSentryComponent([
             'dsn' => null,
-        ], $application);
+            'ravenClass' => 'mito\sentry\tests\unit\DummyRavenClient',
+        ]);
     }
 
-    /**
-     * @dataProvider applications
-     */
-
-    public function testConvertPrivateDsnToPublicDsn($application)
+    public function testConvertPrivateDsnToPublicDsn()
     {
-        $this->setSentryComponent([], $application);
+        $component = $this->mockSentryComponent([
+            'jsNotifier' => true,
+            'ravenClass' => 'mito\sentry\tests\unit\DummyRavenClient',
+        ]);
 
-        $this->assertEquals('https://65b4cf757v9kx53ja583f038bb1a07d6@getsentry.com/1', Yii::$app->sentry->getPublicDsn());
+        $this->assertEquals(self::PUBLIC_DSN, $component->publicDsn);
     }
 
     public function environments()
@@ -64,91 +58,165 @@ class SentryComponentTest extends TestCase
             'development' => ['development', 'development'],
             'staging' => ['staging', 'staging'],
             'production' => ['production', 'production'],
-            'empty @console' => [null, null, self::APP_CONSOLE],
-            'development @console' => ['development', 'development', self::APP_CONSOLE],
-            'staging @console' => ['staging', 'staging', self::APP_CONSOLE],
-            'production @console' => ['production', 'production', self::APP_CONSOLE],
         ];
     }
 
     /**
      * @dataProvider environments
      */
-    public function testSetEnvironment($environment, $expected, $application = self::APP_WEB)
+    public function testSetEnvironment($environment, $expected)
     {
-        $this->setSentryComponent([
-            'environment' => $environment
-        ], $application);
-
-        $this->assertEquals($expected, Yii::$app->sentry->environment);
+        $component = $this->mockSentryComponent([
+            'jsNotifier' => true,
+            'environment' => $environment,
+            'ravenClass' => 'mito\sentry\tests\unit\DummyRavenClient',
+        ]);
+        $this->assertEquals($expected, $component->environment);
+        $this->assertInstanceOf('mito\sentry\tests\unit\DummyRavenClient', $component->client);
         if (!empty($environment)) {
-            $this->assertEquals($expected, Yii::$app->sentry->options['tags']['environment']);
-            $this->assertEquals($expected, Yii::$app->sentry->clientOptions['tags']['environment']);
-            $this->assertEquals($expected, Yii::$app->sentry->client->tags['environment']);
+            $this->assertArrayHasKey('tags', $component->options);
+            $this->assertArrayHasKey('tags', $component->jsOptions);
+            $this->assertArrayHasKey('environment', $component->client->tags);
+            $this->assertEquals($expected, $component->options['tags']['environment']);
+            $this->assertEquals($expected, $component->jsOptions['tags']['environment']);
+            $this->assertEquals($expected, $component->client->tags['environment']);
         }
     }
 
-    /**
-     * @dataProvider applications
-     */
-    public function testIfPublicDsnSetThenJsNotifierIsEnabled($application)
+    public function testClientConfig()
     {
-        $this->setSentryComponent([
-            'publicDsn' => 'https://65b4cf757v9kx53ja583f038bb1a07d6@getsentry.com/1',
-            'jsNotifier' => false,
-        ], $application);
-
-        $this->assertTrue(Yii::$app->sentry->jsNotifier);
+        $component = $this->mockSentryComponent([
+            'jsNotifier' => true,
+            'environment' => 'development',
+            'client' => [
+                'class' => 'mito\sentry\tests\unit\DummyRavenClient',
+                'tags' => [
+                    'test' => 'value',
+                ],
+            ],
+        ]);
+        $this->assertInstanceOf('mito\sentry\tests\unit\DummyRavenClient', $component->client);
+        $this->assertEquals(self::PRIVATE_DSN, $component->client->dsn);
+        $this->assertArrayHasKey('test', $component->client->tags);
+        $this->assertEquals('value', $component->client->tags['test']);
+        $this->assertArrayHasKey('environment', $component->client->tags);
+        $this->assertEquals('development', $component->client->tags['environment']);
+        $this->assertEquals($component->client, $component->getClient());
     }
 
-    /**
-     * @dataProvider applications
-     */
-    public function testIfPublicDsnEmptyAndJsNotifierFalse($application)
+    public function testCapture()
     {
-        $this->setSentryComponent([
+        $raven = Mockery::mock('\Raven_Client');
+
+        $component = $this->mockSentryComponent([
+            'jsNotifier' => true,
+            'environment' => 'development',
+            'client' => $raven,
+        ]);
+
+        $message = 'message';
+        $params = ['foo' => 'bar'];
+        $level = 'info';
+        $stack = ['stack1', 'stack2'];
+        $vars = ['var1' => 'value 1'];
+
+        $data = [
+            'message' => $message,
+        ];
+        $logger = 'test';
+        $exception = new \Exception('exception message');
+
+        $raven->shouldReceive('captureMessage')->with($message, $params, $level, $stack, $vars)->atLeast()->once();
+        $raven->shouldReceive('captureException')->with($exception, $data, $logger, $vars)->atLeast()->once();
+        $raven->shouldReceive('capture')->with($data, $stack, $vars)->atLeast()->once();
+
+        $component->captureMessage($message, $params, $level, $stack, $vars);
+        $component->captureException($exception, $data, $logger, $vars);
+        $component->capture($data, $stack, $vars);
+    }
+
+    private function assertAssetRegistered($asset)
+    {
+            if (Yii::$app->view instanceof \yii\web\View) {
+                $this->assertArrayHasKey($asset, Yii::$app->view->assetBundles);
+            }
+        }
+        private function assertAssetNotRegistered($asset) {
+            if (Yii::$app->view instanceof \yii\web\View) {
+                $this->assertArrayNotHasKey($asset, Yii::$app->view->assetBundles);
+            }
+        }
+
+    public function testJsNotifierEnabledIfPublicDsnSet()
+    {
+        $publicDsn = 'https://45b4cf757v9kx53ja583f038bb1a07d6@getsentry.com/1';
+        $component = $this->mockSentryComponent([
+            'publicDsn' => $publicDsn,
+            'jsNotifier' => false,
+            'environment' => 'development',
+            'ravenClass' => 'mito\sentry\tests\unit\DummyRavenClient',
+        ]);
+        $this->assertTrue($component->jsNotifier);
+        $this->assertEquals($publicDsn, $component->publicDsn);
+        $this->assertEquals($component->publicDsn, $component->getPublicDsn());
+        $this->assertAssetRegistered('mito\sentry\assets\RavenAsset');
+    }
+
+    public function testAssetNotRegisteredIfJsNotifierIsFalseAndPublicDsnIsEmpty()
+    {
+        $component = $this->mockSentryComponent([
             'publicDsn' => '',
             'jsNotifier' => false,
-        ], $application);
-
-        $this->assertArrayNotHasKey('mito\sentry\assets\RavenAsset', Yii::$app->view->assetBundles);
+            'environment' => 'development',
+            'ravenClass' => 'mito\sentry\tests\unit\DummyRavenClient',
+        ]);
+        $this->assertAssetNotRegistered('mito\sentry\assets\RavenAsset');
     }
 
-    /**
-     * @dataProvider applications
-     */
-    public function testIfPublicDsnIsNotSetAndJsNotifierIsFalseThenDoNotRegisterAssets($application)
+    public function testAssetNotRegisteredIfJsNotifierIsFalse()
     {
-        $this->setSentryComponent([
+        $component = $this->mockSentryComponent([
             'jsNotifier' => false,
-        ], $application);
-
-        $this->assertArrayNotHasKey('mito\sentry\assets\RavenAsset', Yii::$app->view->assetBundles);
+            'environment' => 'development',
+            'ravenClass' => 'mito\sentry\tests\unit\DummyRavenClient',
+        ]);
+        $this->assertAssetNotRegistered('mito\sentry\assets\RavenAsset');
     }
 
-    /**
-     * @dataProvider applications
-     */
-    public function testComponentIsNotEnabledThenDoNotRegisterAssets($application)
+    public function testAutogeneratedPublicDsn()
     {
-        $this->setSentryComponent([
+        $component = $this->mockSentryComponent([
+            'jsNotifier' => true,
+            'environment' => 'development',
+            'ravenClass' => 'mito\sentry\tests\unit\DummyRavenClient',
+        ]);
+        $this->assertTrue($component->jsNotifier);
+        $this->assertEquals(self::PUBLIC_DSN, $component->publicDsn);
+        $this->assertAssetRegistered('mito\sentry\assets\RavenAsset');
+    }
+
+    public function testAssetNotRegisteredIfComponentIsNotEnabled()
+    {
+        $component = $this->mockSentryComponent([
             'enabled' => false,
-        ], $application);
-
-        $this->assertArrayNotHasKey('mito\sentry\assets\RavenAsset', Yii::$app->view->assetBundles);
-    }
-
-    public function testComponentIsEnabledThenRegisterAssets()
-    {
-        $this->setSentryComponent();
-
-        $this->assertArrayHasKey('mito\sentry\assets\RavenAsset', Yii::$app->view->assetBundles);
+            'jsNotifier' => true,
+        ]);
+        $this->assertAssetNotRegistered('mito\sentry\assets\RavenAsset');
     }
 
     public function testDoNotRegisterAssetsIfApplicationIsConsoleApplication()
     {
-        $this->setSentryComponent([], self::APP_CONSOLE);
-
-        $this->assertArrayNotHasKey('mito\sentry\assets\RavenAsset', Yii::$app->view->assetBundles);
+        $this->destroyApplication();
+        $this->mockApplication([
+            'id' => 'testapp-console',
+            'class' => '\yii\console\Application',
+            'basePath' => '@mitosentry/tests/unit/runtime/web',
+            'vendorPath' => '@mitosentry/vendor',
+        ]);
+        $component = $this->mockSentryComponent([
+            'enabled' => true,
+            'jsNotifier' => true,
+        ]);
+        $this->assertAssetNotRegistered('mito\sentry\assets\RavenAsset');
     }
 }
