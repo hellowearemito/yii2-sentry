@@ -59,7 +59,7 @@ class SentryTarget extends Target
                 ]
             ];
 
-            if ($context instanceof \Exception) {
+            if ($context instanceof \Throwable || $context instanceof \Exception) {
                 $this->sentry->captureException($context, $data);
                 continue;
             } elseif (isset($context['msg'])) {

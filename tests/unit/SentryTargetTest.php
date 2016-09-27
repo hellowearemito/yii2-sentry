@@ -1,13 +1,6 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: aborsos
- * Date: 16. 05. 03.
- * Time: 13:57
- */
 
 namespace mito\sentry\tests\unit;
-
 
 use mito\sentry\SentryTarget;
 use mito\sentry\SentryComponent;
@@ -15,6 +8,7 @@ use yii\log\Logger;
 use yii\helpers\ArrayHelper;
 use Yii;
 use Mockery;
+use yii\web\HttpException;
 
 class SentryTargetTest extends \yii\codeception\TestCase
 {
@@ -22,7 +16,15 @@ class SentryTargetTest extends \yii\codeception\TestCase
     const EXCEPTION_TYPE_MSG = 'message';
     const EXCEPTION_TYPE_STRING = 'string';
 
+    const DEFAULT_ERROR_MESSAGE = 'message';
+
     public $appConfig = '@mitosentry/tests/unit/config/main.php';
+
+    private $_exceptionTypes = [
+        self::EXCEPTION_TYPE_OBJECT,
+        self::EXCEPTION_TYPE_MSG,
+        self::EXCEPTION_TYPE_STRING,
+    ];
 
     protected function mockSentryTarget($options = [])
     {
@@ -66,7 +68,6 @@ class SentryTargetTest extends \yii\codeception\TestCase
      *
      * @param $filter
      * @param $expected
-     * @param string $application
      */
     public function testFilter($filter, $expected)
     {
@@ -97,12 +98,12 @@ class SentryTargetTest extends \yii\codeception\TestCase
      * @dataProvider exceptions
      *
      * @param $except
+     * @param $exceptionClass
      * @param $exceptionCode
      * @param $expectLogged
      * @param $type
-     * @param string $application
      */
-    public function testExceptions($except, $exceptionCode, $expectLogged, $type)
+    public function testExceptions($except, $exceptionClass, $exceptionCode, $expectLogged, $type)
     {
         $target = $this->mockSentryTarget($except);
         $logger = $this->mockLogger($target);
@@ -111,14 +112,14 @@ class SentryTargetTest extends \yii\codeception\TestCase
             if ($type === self::EXCEPTION_TYPE_OBJECT) {
                 $target->sentry->shouldReceive('captureException')
                     ->with(Mockery::on(function($exception) {
-                        return $exception instanceof \Exception && $exception->getMessage() === 'message';
+                        return ($exception instanceof \Throwable || $exception instanceof \Exception) && $exception->getMessage() === self::DEFAULT_ERROR_MESSAGE;
                     }), Mockery::on(function($data) {
                         return true;
                     }))->once();
             } else {
                 $target->sentry->shouldReceive('capture')
                     ->with(Mockery::on(function($data) {
-                        return $data['message'] === 'message';
+                        return $data['message'] === self::DEFAULT_ERROR_MESSAGE;
                     }), Mockery::on(function($traces) {
                         return true;
                     }))->once();
@@ -135,27 +136,32 @@ class SentryTargetTest extends \yii\codeception\TestCase
                 return true;
             }))->once();
 
-        try {
-            throw new \Exception('message', $exceptionCode);
-        } catch (\Exception $e) {
-
-            $exception = $e;
-            switch ($type) {
-                case self::EXCEPTION_TYPE_MSG:
-                    $exception = ['msg' => $e->getMessage()];
-                    break;
-                case self::EXCEPTION_TYPE_STRING:
-                    $exception = $e->getMessage();
-                    break;
-            }
-
-            $logger->log($exception, Logger::LEVEL_ERROR, 'yii\web\HttpException:' . $exceptionCode);
+        switch ($type) {
+            case self::EXCEPTION_TYPE_OBJECT:
+                $exception = new $exceptionClass(self::DEFAULT_ERROR_MESSAGE, $exceptionCode);
+                break;
+            case self::EXCEPTION_TYPE_MSG:
+                $exception = ['msg' => self::DEFAULT_ERROR_MESSAGE];
+                break;
+            case self::EXCEPTION_TYPE_STRING:
+                $exception = self::DEFAULT_ERROR_MESSAGE;
+                break;
+            default:
+                $exception = false;
         }
+
+        if ($exception !== false) {
+            $logger->log($exception, Logger::LEVEL_ERROR, $exceptionClass . ":" . $exceptionCode);
+        }
+
         $logger->log('sentinel', Logger::LEVEL_INFO);
 
         $logger->flush(true);
     }
 
+    /**
+     * @return array
+     */
     public function filters()
     {
         return [
@@ -206,18 +212,34 @@ class SentryTargetTest extends \yii\codeception\TestCase
         ];
     }
 
+    /**
+     * @return array
+     */
     public function exceptions()
     {
-        return [
-            'skip code 404' => [['except' => ['yii\web\HttpException:404']], 404, false, self::EXCEPTION_TYPE_OBJECT],
-            'skip http *' => [['except' => ['yii\web\HttpException:*']], 403, false, self::EXCEPTION_TYPE_MSG],
-            'catch code 0' => [['except' => ['yii\web\HttpException:404']], 0, true, self::EXCEPTION_TYPE_STRING],
-            'catch code 400' => [['except' => ['yii\web\HttpException:404']], 400, true, self::EXCEPTION_TYPE_OBJECT],
-            'catch code 401' => [['except' => ['yii\web\HttpException:404']], 401, true, self::EXCEPTION_TYPE_MSG],
-            'catch code 402' => [['except' => ['yii\web\HttpException:404']], 402, true, self::EXCEPTION_TYPE_STRING],
-            'catch code 403' => [['except' => ['yii\web\HttpException:404']], 403, true, self::EXCEPTION_TYPE_OBJECT],
-            'catch code 500' => [['except' => ['yii\web\HttpException:404']], 500, true, self::EXCEPTION_TYPE_MSG],
-            'catch code 503' => [['except' => ['yii\web\HttpException:404']], 503, true, self::EXCEPTION_TYPE_STRING],
-        ];
+        $results = [];
+        foreach ($this->_exceptionTypes as $exceptionType) {
+            $results = array_merge($results, [
+                'skip code 404 - ' . $exceptionType => [['except' => ['yii\web\HttpException:404']], HttpException::class, 404, false, $exceptionType],
+                'skip http * - ' . $exceptionType => [['except' => ['yii\web\HttpException:*']], HttpException::class, 403, false, $exceptionType],
+                'catch code 0 - ' . $exceptionType => [['except' => ['yii\web\HttpException:404']], \Exception::class, 0, true, $exceptionType],
+                'catch code 400 - ' . $exceptionType => [['except' => ['yii\web\HttpException:404']], \Exception::class, 400, true, $exceptionType],
+                'catch code 401 - ' . $exceptionType => [['except' => ['yii\web\HttpException:404']], \Exception::class, 401, true, $exceptionType],
+                'catch code 402 - ' . $exceptionType => [['except' => ['yii\web\HttpException:404']], \Exception::class, 402, true, $exceptionType],
+                'catch code 403 - ' . $exceptionType => [['except' => ['yii\web\HttpException:404']], \Exception::class, 403, true, $exceptionType],
+                'catch code 500 - ' . $exceptionType => [['except' => ['yii\web\HttpException:404']], \Exception::class, 500, true, $exceptionType],
+                'catch code 503 - ' . $exceptionType => [['except' => ['yii\web\HttpException:404']], \Exception::class, 503, true, $exceptionType],
+            ]);
+
+            // php7+
+            if (class_exists('\Error')) {
+                $results = array_merge($results, [
+                    'skip \Error - ' . $exceptionType => [['except' => ['Error:*']], \Error::class, 0, false, $exceptionType],
+                    'catch \Error - ' . $exceptionType => [['except' => ['yii\web\HttpException:404']], \Error::class, 0, true, $exceptionType],
+                ]);
+            }
+        }
+
+        return $results;
     }
 }
