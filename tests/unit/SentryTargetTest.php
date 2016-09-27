@@ -95,7 +95,7 @@ class SentryTargetTest extends \yii\codeception\TestCase
     }
 
     /**
-     * @dataProvider exceptions
+     * @dataProvider exceptFilters
      *
      * @param $except
      * @param $exceptionClass
@@ -103,7 +103,7 @@ class SentryTargetTest extends \yii\codeception\TestCase
      * @param $expectLogged
      * @param $type
      */
-    public function testExceptions($except, $exceptionClass, $exceptionCode, $expectLogged, $type)
+    public function testFilterExceptions($except, $exceptionClass, $exceptionCode, $expectLogged, $type)
     {
         $target = $this->mockSentryTarget($except);
         $logger = $this->mockLogger($target);
@@ -136,22 +136,11 @@ class SentryTargetTest extends \yii\codeception\TestCase
                 return true;
             }))->once();
 
-        switch ($type) {
-            case self::EXCEPTION_TYPE_OBJECT:
-                $exception = new $exceptionClass(self::DEFAULT_ERROR_MESSAGE, $exceptionCode);
-                break;
-            case self::EXCEPTION_TYPE_MSG:
-                $exception = ['msg' => self::DEFAULT_ERROR_MESSAGE];
-                break;
-            case self::EXCEPTION_TYPE_STRING:
-                $exception = self::DEFAULT_ERROR_MESSAGE;
-                break;
-            default:
-                $exception = false;
-        }
+        $exception = $this->createException($type, $exceptionClass, $exceptionCode);
+        $category = $this->getLogCategory($exception);
 
         if ($exception !== false) {
-            $logger->log($exception, Logger::LEVEL_ERROR, $exceptionClass . ":" . $exceptionCode);
+            $logger->log($exception, Logger::LEVEL_ERROR, $category);
         }
 
         $logger->log('sentinel', Logger::LEVEL_INFO);
@@ -215,31 +204,74 @@ class SentryTargetTest extends \yii\codeception\TestCase
     /**
      * @return array
      */
-    public function exceptions()
+    public function exceptFilters()
     {
-        $results = [];
-        foreach ($this->_exceptionTypes as $exceptionType) {
-            $results = array_merge($results, [
-                'skip code 404 - ' . $exceptionType => [['except' => ['yii\web\HttpException:404']], HttpException::class, 404, false, $exceptionType],
-                'skip http * - ' . $exceptionType => [['except' => ['yii\web\HttpException:*']], HttpException::class, 403, false, $exceptionType],
-                'catch code 0 - ' . $exceptionType => [['except' => ['yii\web\HttpException:404']], \Exception::class, 0, true, $exceptionType],
-                'catch code 400 - ' . $exceptionType => [['except' => ['yii\web\HttpException:404']], \Exception::class, 400, true, $exceptionType],
-                'catch code 401 - ' . $exceptionType => [['except' => ['yii\web\HttpException:404']], \Exception::class, 401, true, $exceptionType],
-                'catch code 402 - ' . $exceptionType => [['except' => ['yii\web\HttpException:404']], \Exception::class, 402, true, $exceptionType],
-                'catch code 403 - ' . $exceptionType => [['except' => ['yii\web\HttpException:404']], \Exception::class, 403, true, $exceptionType],
-                'catch code 500 - ' . $exceptionType => [['except' => ['yii\web\HttpException:404']], \Exception::class, 500, true, $exceptionType],
-                'catch code 503 - ' . $exceptionType => [['except' => ['yii\web\HttpException:404']], \Exception::class, 503, true, $exceptionType],
-            ]);
 
-            // php7+
-            if (class_exists('\Error')) {
-                $results = array_merge($results, [
-                    'skip \Error - ' . $exceptionType => [['except' => ['Error:*']], \Error::class, 0, false, $exceptionType],
-                    'catch \Error - ' . $exceptionType => [['except' => ['yii\web\HttpException:404']], \Error::class, 0, true, $exceptionType],
-                ]);
-            }
+        $results = [
+            'skip code 404' => [['except' => ['yii\web\HttpException:404']], HttpException::class, 404, false, self::EXCEPTION_TYPE_OBJECT],
+            'skip http *' => [['except' => ['yii\web\HttpException:*']], HttpException::class, 403, false, self::EXCEPTION_TYPE_OBJECT],
+            'catch code 0' => [['except' => ['yii\web\HttpException:404']], HttpException::class, 0, true, self::EXCEPTION_TYPE_OBJECT],
+            'catch code 400' => [['except' => ['yii\web\HttpException:404']], HttpException::class, 400, true, self::EXCEPTION_TYPE_OBJECT],
+            'catch code 401' => [['except' => ['yii\web\HttpException:404']], HttpException::class, 401, true, self::EXCEPTION_TYPE_OBJECT],
+            'catch code 402' => [['except' => ['yii\web\HttpException:404']], HttpException::class, 402, true, self::EXCEPTION_TYPE_OBJECT],
+            'catch code 403' => [['except' => ['yii\web\HttpException:404']], HttpException::class, 403, true, self::EXCEPTION_TYPE_OBJECT],
+            'catch code 500' => [['except' => ['yii\web\HttpException:404']], HttpException::class, 500, true, self::EXCEPTION_TYPE_OBJECT],
+            'catch code 503' => [['except' => ['yii\web\HttpException:404']], HttpException::class, 503, true, self::EXCEPTION_TYPE_OBJECT],
+            'catch string' => [['except' => ['yii\web\HttpException:404']], null, null, true, self::EXCEPTION_TYPE_STRING],
+            'catch message' => [['except' => ['yii\web\HttpException:404']], null, null, true, self::EXCEPTION_TYPE_MSG],
+        ];
+
+        // php7+
+        if (class_exists('\Error')) {
+            $results = array_merge($results, [
+                'skip \Error' => [['except' => ['Error']], \Error::class, null, false, self::EXCEPTION_TYPE_OBJECT],
+                'catch \Error' => [['except' => ['yii\web\HttpException:404']], \Error::class, null, true, self::EXCEPTION_TYPE_OBJECT],
+            ]);
         }
 
+        $results = array_merge($results, [
+        ]);
+
         return $results;
+    }
+
+    private function getLogCategory($exception)
+    {
+        if (!is_object($exception)) {
+            return 'application';
+        }
+
+        $category = get_class($exception);
+        if ($exception instanceof HttpException) {
+            $category = 'yii\\web\\HttpException:' . $exception->statusCode;
+        } elseif ($exception instanceof \ErrorException) {
+            $category .= ':' . $exception->getSeverity();
+        }
+
+        return $category;
+    }
+
+    private function createException($type, $exceptionClass, $exceptionCode)
+    {
+        switch ($type) {
+            case self::EXCEPTION_TYPE_OBJECT:
+                if ($exceptionClass === HttpException::class){
+                    $args = [$exceptionCode, self::DEFAULT_ERROR_MESSAGE];
+                }else{
+                    $args = [self::DEFAULT_ERROR_MESSAGE, $exceptionCode];
+                }
+                $exception = (new \ReflectionClass($exceptionClass))->newInstanceArgs($args);
+                break;
+            case self::EXCEPTION_TYPE_MSG:
+                $exception = ['msg' => self::DEFAULT_ERROR_MESSAGE];
+                break;
+            case self::EXCEPTION_TYPE_STRING:
+                $exception = self::DEFAULT_ERROR_MESSAGE;
+                break;
+            default:
+                $exception = false;
+        }
+
+        return $exception;
     }
 }
