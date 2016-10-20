@@ -38,7 +38,6 @@ You can use this extension with both the hosted and on-premise version of Sentry
 Once the extension is installed, set your configuration in common config file:
 
 ```php
-    'bootstrap' => ['log', 'sentry'],
     'components' => [
     
         'sentry' => [
