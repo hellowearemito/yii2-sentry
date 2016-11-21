@@ -7,6 +7,7 @@ use Yii;
 use yii\base\Component;
 use yii\base\ErrorException;
 use yii\base\InvalidConfigException;
+use yii\helpers\ArrayHelper;
 use yii\helpers\Json;
 use yii\web\View;
 
@@ -107,9 +108,8 @@ class SentryComponent extends Component
         }
 
         if (is_array($this->client)) {
-            $ravenClass = $this->client['class'];
+            $ravenClass = ArrayHelper::remove($this->client, 'class', '\Raven_Client');
             $options = $this->client;
-            unset($options['class']);
             $this->client = new $ravenClass($this->dsn, $options);
         } elseif (empty($this->client)) {
             // deprecated codepath
