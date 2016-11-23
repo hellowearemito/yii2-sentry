@@ -5,7 +5,6 @@ namespace mito\sentry;
 use mito\sentry\assets\RavenAsset;
 use Yii;
 use yii\base\Component;
-use yii\base\ErrorException;
 use yii\base\InvalidConfigException;
 use yii\helpers\ArrayHelper;
 use yii\helpers\Json;

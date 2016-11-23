@@ -14,6 +14,9 @@ class SentryComponentTest extends \yii\codeception\TestCase
 
     public $appConfig = '@mitosentry/tests/unit/config/main.php';
 
+    const CLIENT_CONFIG_TYPE_ARRAY = 'array';
+    const CLIENT_CONFIG_TYPE_OBJECT = 'object';
+
     private function mockSentryComponent($options = [])
     {
         return Yii::createObject(ArrayHelper::merge([
@@ -60,27 +63,36 @@ class SentryComponentTest extends \yii\codeception\TestCase
     public function environments()
     {
         return [
-            'empty' => [null, null],
-            'development' => ['development', 'development'],
-            'staging' => ['staging', 'staging'],
-            'production' => ['production', 'production'],
+            'empty' => [null, null, self::CLIENT_CONFIG_TYPE_ARRAY, 'mito\sentry\tests\unit\DummyRavenClient'],
+            'development' => ['development', 'development', self::CLIENT_CONFIG_TYPE_ARRAY, 'mito\sentry\tests\unit\DummyRavenClient'],
+            'staging' => ['staging', 'staging', self::CLIENT_CONFIG_TYPE_ARRAY, 'mito\sentry\tests\unit\DummyRavenClient'],
+            'production' => ['production', 'production', self::CLIENT_CONFIG_TYPE_ARRAY, 'mito\sentry\tests\unit\DummyRavenClient'],
+            'client config is Dummy object' => ['development', 'development', self::CLIENT_CONFIG_TYPE_OBJECT, DummyRavenClient::class],
+            'client config is object' => ['development', 'development', self::CLIENT_CONFIG_TYPE_OBJECT, \Raven_Client::class],
         ];
     }
 
     /**
      * @dataProvider environments
      */
-    public function testSetEnvironment($environment, $expected)
+    public function testSetEnvironment($environment, $expected, $configType, $clientClass)
     {
+        switch ($configType) {
+            case self::CLIENT_CONFIG_TYPE_ARRAY:
+                $clientConfig = ['class' => $clientClass];
+                break;
+            case self::CLIENT_CONFIG_TYPE_OBJECT:
+                $clientConfig = new $clientClass(self::PRIVATE_DSN, []);
+                break;
+        }
+
         $component = $this->mockSentryComponent([
             'jsNotifier' => true,
             'environment' => $environment,
-            'client' => [
-                'class' => 'mito\sentry\tests\unit\DummyRavenClient',
-            ],
+            'client' => $clientConfig,
         ]);
         $this->assertEquals($expected, $component->environment);
-        $this->assertInstanceOf('mito\sentry\tests\unit\DummyRavenClient', $component->client);
+        $this->assertInstanceOf($clientClass, $component->client);
         if (!empty($environment)) {
             $this->assertArrayHasKey('tags', $component->jsOptions);
             $this->assertArrayHasKey('environment', $component->client->tags);
@@ -90,17 +102,36 @@ class SentryComponentTest extends \yii\codeception\TestCase
         }
     }
 
-    public function testClientConfig()
+    public function clientConfigs()
     {
+        return [
+            'array config' => [self::CLIENT_CONFIG_TYPE_ARRAY, 'mito\sentry\tests\unit\DummyRavenClient'],
+            'object config' => [self::CLIENT_CONFIG_TYPE_OBJECT, DummyRavenClient::class],
+        ];
+    }
+
+    /**
+     * @dataProvider clientConfigs
+     */
+    public function testClientConfig($configType, $clientClass)
+    {
+        switch ($configType) {
+            case self::CLIENT_CONFIG_TYPE_ARRAY:
+                $clientConfig = [
+                    'class' => $clientClass,
+                    'tags' => [
+                        'test' => 'value',
+                    ],
+                ];
+                break;
+            case self::CLIENT_CONFIG_TYPE_OBJECT:
+                $clientConfig = new $clientClass(self::PRIVATE_DSN, ['tags' => ['test' => 'value']]);
+                break;
+        }
         $component = $this->mockSentryComponent([
             'jsNotifier' => true,
             'environment' => 'development',
-            'client' => [
-                'class' => 'mito\sentry\tests\unit\DummyRavenClient',
-                'tags' => [
-                    'test' => 'value',
-                ],
-            ],
+            'client' => $clientConfig,
         ]);
         $this->assertInstanceOf('mito\sentry\tests\unit\DummyRavenClient', $component->client);
         $this->assertEquals(self::PRIVATE_DSN, $component->client->dsn);
@@ -108,6 +139,15 @@ class SentryComponentTest extends \yii\codeception\TestCase
         $this->assertEquals('value', $component->client->tags['test']);
         $this->assertArrayHasKey('environment', $component->client->tags);
         $this->assertEquals('development', $component->client->tags['environment']);
+    }
+
+    public function testInvalidClientConfig()
+    {
+        $this->expectException(\yii\base\InvalidConfigException::class);
+        $component = $this->mockSentryComponent([
+            'jsNotifier' => true,
+            'client' => \Raven_Client::class,
+        ]);
     }
 
     public function testClientConfigDefaultClass()
