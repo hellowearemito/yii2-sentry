@@ -119,8 +119,9 @@ class SentryComponent extends Component
     private function registerAssets()
     {
         if ($this->jsNotifier && Yii::$app instanceof \yii\web\Application) {
-            RavenAsset::register(Yii::$app->getView());
-            Yii::$app->getView()->registerJs('Raven.config(' . Json::encode($this->publicDsn) . ', ' . Json::encode($this->jsOptions) . ').install();', View::POS_HEAD);
+            $view = Yii::$app->getView();
+            RavenAsset::register($view);
+            $view->registerJs('Raven.config(' . Json::encode($this->publicDsn) . ', ' . Json::encode($this->jsOptions) . ').install();', View::POS_HEAD);
         }
     }
 
