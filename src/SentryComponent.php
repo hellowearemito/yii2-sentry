@@ -61,46 +61,56 @@ class SentryComponent extends Component
 
     public function init()
     {
+        $this->validateDsn();
+
         if (!$this->enabled) {
             return;
         }
 
         $this->setEnvironmentOptions();
-
-        if (empty($this->dsn)) {
-            throw new InvalidConfigException('Private or public DSN must be set!');
-        }
-
-        if ($this->publicDsn === null && $this->jsNotifier === true) {
-            $this->publicDsn = preg_replace('/^(https:\/\/|http:\/\/)([a-z0-9]*):([a-z0-9]*)@(.*)/', '$1$2@$4', $this->dsn);
-        }
-        if (!empty($this->publicDsn)) {
-            $this->jsNotifier = true;
-        }
-
-        if (is_array($this->client)) {
-            $ravenClass = ArrayHelper::remove($this->client, 'class', '\Raven_Client');
-            $options = $this->client;
-            $this->client = new $ravenClass($this->dsn, $options);
-        } elseif (empty($this->client)) {
-            // deprecated codepath
-            $this->client = new $this->ravenClass($this->dsn, $this->options);
-        }
-
+        $this->setRavenClient();
+        $this->generatePublicDsn();
         $this->registerAssets();
     }
 
+    private function validateDsn()
+    {
+        if (empty($this->dsn)) {
+            throw new InvalidConfigException('Private DSN must be set!');
+        }
+
+        // throws \InvalidArgumentException if dsn is invalid
+        \Raven_Client::parseDSN($this->dsn);
+    }
+
+    /**
+     * Adds a tag to filter events by environment
+     */
     private function setEnvironmentOptions()
     {
         if (empty($this->environment)) {
             return;
         }
 
-        if (is_array($this->client)) {
+        if (is_array($this->client) || empty($this->client)) {
             $this->client['tags']['environment'] = $this->environment;
+        } elseif ($this->client instanceof \Raven_Client) {
+            $this->client->tags = ArrayHelper::merge($this->client->tags, ['environment' => $this->environment]);
         }
-        $this->options['tags']['environment'] = $this->environment;
         $this->jsOptions['tags']['environment'] = $this->environment;
+    }
+
+    private function setRavenClient()
+    {
+        if (is_array($this->client)) {
+            $ravenClass = ArrayHelper::remove($this->client, 'class', '\Raven_Client');
+            $options = $this->client;
+            $this->client = new $ravenClass($this->dsn, $options);
+        }
+
+        if ($this->client instanceof \Raven_Client) {
+            throw new InvalidConfigException(get_class($this) . '::' . 'client must be an instance of \Raven_Client');
+        }
     }
 
     /**
@@ -129,6 +139,10 @@ class SentryComponent extends Component
         return $this->client->capture($data, $stack, $vars);
     }
 
+    private function generatePublicDsn()
     {
+        if ($this->publicDsn === null && $this->jsNotifier === true) {
+            $this->publicDsn = preg_replace('/^(https:\/\/|http:\/\/)([a-z0-9]*):([a-z0-9]*)@(.*)/', '$1$2@$4', $this->dsn);
+        }
     }
 }
