@@ -104,6 +104,18 @@ class SentryComponentTest extends \yii\codeception\TestCase
         $this->assertEquals($component->client, $component->getClient());
     }
 
+    public function testClientConfigDefaultClass()
+    {
+        $component = $this->mockSentryComponent([
+            'client' => [
+                'curl_method' => 'async',
+            ],
+        ]);
+        $this->assertInstanceOf(\Raven_Client::class, $component->client);
+        $this->assertEquals('async', $component->client->curl_method);
+        $this->assertEquals($component->client, $component->getClient());
+    }
+
     public function testCapture()
     {
         $raven = Mockery::mock('\Raven_Client');
