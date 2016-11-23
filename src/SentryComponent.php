@@ -55,21 +55,6 @@ class SentryComponent extends Component
     public $jsOptions;
 
     /**
-     * Raven-JS configuration array
-     *
-     * @var array
-     * @see https://docs.getsentry.com/hosted/clients/javascript/config/
-     * @deprecated use [[jsOptions]] instead
-     */
-    public $clientOptions = [];
-
-    /**
-     * @var string Raven client class
-     * @deprecated use [[client]] instead
-     */
-    public $ravenClass = '\Raven_Client';
-
-    /**
      * @var \Raven_Client|array Raven client or configuration array used to instantiate one
      */
     public $client;
@@ -80,14 +65,7 @@ class SentryComponent extends Component
             return;
         }
 
-        if ($this->jsOptions === null) {
-            $this->jsOptions = $this->clientOptions;
-        }
-
         $this->setEnvironmentOptions();
-
-        // for backwards compatibility
-        $this->clientOptions = $this->jsOptions;
 
         if (empty($this->dsn)) {
             throw new InvalidConfigException('Private or public DSN must be set!');
@@ -151,21 +129,6 @@ class SentryComponent extends Component
         return $this->client->capture($data, $stack, $vars);
     }
 
-    /**
-     * @return \Raven_Client
-     * @deprecated use [[$client]]
-     */
-    public function getClient()
     {
-        return $this->client;
-    }
-
-    /**
-     * @return string public dsn
-     * @deprecated use [[$publicDsn]]
-     */
-    public function getPublicDsn()
-    {
-        return $this->publicDsn;
     }
 }
