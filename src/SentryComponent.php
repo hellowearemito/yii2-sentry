@@ -94,7 +94,7 @@ class SentryComponent extends Component
 
         if (is_array($this->client) || empty($this->client)) {
             $this->client['tags']['environment'] = $this->environment;
-        } elseif ($this->client instanceof \Raven_Client) {
+        } elseif (is_object($this->client) && property_exists($this->client, 'tags')) {
             $this->client->tags = ArrayHelper::merge($this->client->tags, ['environment' => $this->environment]);
         }
         $this->jsOptions['tags']['environment'] = $this->environment;
@@ -102,14 +102,14 @@ class SentryComponent extends Component
 
     private function setRavenClient()
     {
-        if (is_array($this->client)) {
+        if (is_array($this->client) || empty($this->client)) {
             $ravenClass = ArrayHelper::remove($this->client, 'class', '\Raven_Client');
             $options = $this->client;
             $this->client = new $ravenClass($this->dsn, $options);
         }
 
-        if ($this->client instanceof \Raven_Client) {
-            throw new InvalidConfigException(get_class($this) . '::' . 'client must be an instance of \Raven_Client');
+        if (!is_object($this->client)) {
+            throw new InvalidConfigException(get_class($this) . '::' . 'client must be an object');
         }
     }
 

@@ -23,21 +23,25 @@ class SentryComponentTest extends \yii\codeception\TestCase
         ], $options));
     }
 
-    public function testDontCrashIfNotEnabledAndNullDSN()
-    {
-        $this->mockSentryComponent([
-            'enabled' => false,
-            'dsn' => null,
-            'ravenClass' => 'mito\sentry\tests\unit\DummyRavenClient',
-        ]);
-    }
-
     public function testInvalidConfigExceptionIfDsnIsNotSet()
     {
         $this->expectException(\yii\base\InvalidConfigException::class);
         $this->mockSentryComponent([
             'dsn' => null,
-            'ravenClass' => 'mito\sentry\tests\unit\DummyRavenClient',
+            'client' => [
+                'class' => 'mito\sentry\tests\unit\DummyRavenClient',
+            ],
+        ]);
+    }
+
+    public function testInvalidConfigExceptionIfDsnIsInvalid()
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->mockSentryComponent([
+            'dsn' => 'https://getsentry.io/50',
+            'client' => [
+                'class' => 'mito\sentry\tests\unit\DummyRavenClient',
+            ],
         ]);
     }
 
@@ -45,7 +49,9 @@ class SentryComponentTest extends \yii\codeception\TestCase
     {
         $component = $this->mockSentryComponent([
             'jsNotifier' => true,
-            'ravenClass' => 'mito\sentry\tests\unit\DummyRavenClient',
+            'client' => [
+                'class' => 'mito\sentry\tests\unit\DummyRavenClient',
+            ],
         ]);
 
         $this->assertEquals(self::PUBLIC_DSN, $component->publicDsn);
@@ -69,15 +75,16 @@ class SentryComponentTest extends \yii\codeception\TestCase
         $component = $this->mockSentryComponent([
             'jsNotifier' => true,
             'environment' => $environment,
-            'ravenClass' => 'mito\sentry\tests\unit\DummyRavenClient',
+            'client' => [
+                'class' => 'mito\sentry\tests\unit\DummyRavenClient',
+            ],
         ]);
         $this->assertEquals($expected, $component->environment);
         $this->assertInstanceOf('mito\sentry\tests\unit\DummyRavenClient', $component->client);
         if (!empty($environment)) {
-            $this->assertArrayHasKey('tags', $component->options);
             $this->assertArrayHasKey('tags', $component->jsOptions);
             $this->assertArrayHasKey('environment', $component->client->tags);
-            $this->assertEquals($expected, $component->options['tags']['environment']);
+            $this->assertEquals($expected, $component->client->tags['environment']);
             $this->assertEquals($expected, $component->jsOptions['tags']['environment']);
             $this->assertEquals($expected, $component->client->tags['environment']);
         }
@@ -101,7 +108,6 @@ class SentryComponentTest extends \yii\codeception\TestCase
         $this->assertEquals('value', $component->client->tags['test']);
         $this->assertArrayHasKey('environment', $component->client->tags);
         $this->assertEquals('development', $component->client->tags['environment']);
-        $this->assertEquals($component->client, $component->getClient());
     }
 
     public function testClientConfigDefaultClass()
@@ -113,7 +119,6 @@ class SentryComponentTest extends \yii\codeception\TestCase
         ]);
         $this->assertInstanceOf(\Raven_Client::class, $component->client);
         $this->assertEquals('async', $component->client->curl_method);
-        $this->assertEquals($component->client, $component->getClient());
     }
 
     public function testCapture()
@@ -149,29 +154,32 @@ class SentryComponentTest extends \yii\codeception\TestCase
 
     private function assertAssetRegistered($asset)
     {
-            if (Yii::$app->view instanceof \yii\web\View) {
-                $this->assertArrayHasKey($asset, Yii::$app->view->assetBundles);
-            }
+        if (Yii::$app->view instanceof \yii\web\View) {
+            $this->assertArrayHasKey($asset, Yii::$app->view->assetBundles);
         }
-        private function assertAssetNotRegistered($asset) {
-            if (Yii::$app->view instanceof \yii\web\View) {
-                $this->assertArrayNotHasKey($asset, Yii::$app->view->assetBundles);
-            }
-        }
+    }
 
-    public function testJsNotifierEnabledIfPublicDsnSet()
+    private function assertAssetNotRegistered($asset)
+    {
+        if (Yii::$app->view instanceof \yii\web\View) {
+            $this->assertArrayNotHasKey($asset, Yii::$app->view->assetBundles);
+        }
+    }
+
+    public function testJsNotifierIsNotEnabledIfPublicDsnSet()
     {
         $publicDsn = 'https://45b4cf757v9kx53ja583f038bb1a07d6@getsentry.com/1';
         $component = $this->mockSentryComponent([
             'publicDsn' => $publicDsn,
             'jsNotifier' => false,
             'environment' => 'development',
-            'ravenClass' => 'mito\sentry\tests\unit\DummyRavenClient',
+            'client' => [
+                'class' => 'mito\sentry\tests\unit\DummyRavenClient',
+            ],
         ]);
-        $this->assertTrue($component->jsNotifier);
+        $this->assertFalse($component->jsNotifier);
         $this->assertEquals($publicDsn, $component->publicDsn);
-        $this->assertEquals($component->publicDsn, $component->getPublicDsn());
-        $this->assertAssetRegistered('mito\sentry\assets\RavenAsset');
+        $this->assertAssetNotRegistered('mito\sentry\assets\RavenAsset');
     }
 
     public function testAssetNotRegisteredIfJsNotifierIsFalseAndPublicDsnIsEmpty()
@@ -180,7 +188,9 @@ class SentryComponentTest extends \yii\codeception\TestCase
             'publicDsn' => '',
             'jsNotifier' => false,
             'environment' => 'development',
-            'ravenClass' => 'mito\sentry\tests\unit\DummyRavenClient',
+            'client' => [
+                'class' => 'mito\sentry\tests\unit\DummyRavenClient',
+            ],
         ]);
         $this->assertAssetNotRegistered('mito\sentry\assets\RavenAsset');
     }
@@ -190,7 +200,9 @@ class SentryComponentTest extends \yii\codeception\TestCase
         $component = $this->mockSentryComponent([
             'jsNotifier' => false,
             'environment' => 'development',
-            'ravenClass' => 'mito\sentry\tests\unit\DummyRavenClient',
+            'client' => [
+                'class' => 'mito\sentry\tests\unit\DummyRavenClient',
+            ],
         ]);
         $this->assertAssetNotRegistered('mito\sentry\assets\RavenAsset');
     }
@@ -200,7 +212,9 @@ class SentryComponentTest extends \yii\codeception\TestCase
         $component = $this->mockSentryComponent([
             'jsNotifier' => true,
             'environment' => 'development',
-            'ravenClass' => 'mito\sentry\tests\unit\DummyRavenClient',
+            'client' => [
+                'class' => 'mito\sentry\tests\unit\DummyRavenClient',
+            ],
         ]);
         $this->assertTrue($component->jsNotifier);
         $this->assertEquals(self::PUBLIC_DSN, $component->publicDsn);
