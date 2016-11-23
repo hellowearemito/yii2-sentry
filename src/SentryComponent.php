@@ -37,14 +37,7 @@ class SentryComponent extends Component
      * @var string environment name
      * @note this is ignored if [[client]] is a Raven client instance.
      */
-    public $environment = 'development';
-
-    /**
-     * @var array Options of the Raven client.
-     * @see \Raven_Client::__construct for more details
-     * @deprecated use [[client]] instead
-     */
-    public $options = [];
+    public $environment = 'production';
 
     /**
      * collect JavaScript errors
