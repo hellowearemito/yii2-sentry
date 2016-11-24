@@ -3,4 +3,4 @@
  - DSN is required even if the component is disabled
  - default environment tag is `production`
  - remove deprecated methods and properties
- - separate init method's content to dividual methods
+ - separate init method's content to individual methods
