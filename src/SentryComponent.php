@@ -2,6 +2,7 @@
 
 namespace mito\sentry;
 
+use Closure;
 use mito\sentry\assets\RavenAsset;
 use Yii;
 use yii\base\Component;
@@ -56,7 +57,7 @@ class SentryComponent extends Component
     /**
      * @var \Raven_Client|array Raven client or configuration array used to instantiate one
      */
-    public $client;
+    public $client = [];
 
     public function init()
     {
@@ -66,8 +67,8 @@ class SentryComponent extends Component
             return;
         }
 
-        $this->setEnvironmentOptions();
         $this->setRavenClient();
+        $this->setEnvironmentOptions();
         $this->generatePublicDsn();
         $this->registerAssets();
     }
@@ -91,9 +92,7 @@ class SentryComponent extends Component
             return;
         }
 
-        if (is_array($this->client) || empty($this->client)) {
-            $this->client['tags']['environment'] = $this->environment;
-        } elseif (is_object($this->client) && property_exists($this->client, 'tags')) {
+        if (is_object($this->client) && property_exists($this->client, 'tags')) {
             $this->client->tags = ArrayHelper::merge($this->client->tags, ['environment' => $this->environment]);
         }
         $this->jsOptions['tags']['environment'] = $this->environment;
@@ -101,10 +100,12 @@ class SentryComponent extends Component
 
     private function setRavenClient()
     {
-        if (is_array($this->client) || empty($this->client)) {
+        if (is_array($this->client)) {
             $ravenClass = ArrayHelper::remove($this->client, 'class', '\Raven_Client');
             $options = $this->client;
             $this->client = new $ravenClass($this->dsn, $options);
+        } elseif (!is_object($this->client) || $this->client instanceof Closure) {
+            $this->client = Yii::createObject($this->client);
         }
 
         if (!is_object($this->client)) {

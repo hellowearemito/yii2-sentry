@@ -16,6 +16,7 @@ class SentryComponentTest extends \yii\codeception\TestCase
 
     const CLIENT_CONFIG_TYPE_ARRAY = 'array';
     const CLIENT_CONFIG_TYPE_OBJECT = 'object';
+    const CLIENT_CONFIG_TYPE_CALLABLE = 'callable';
 
     private function mockSentryComponent($options = [])
     {
@@ -69,6 +70,11 @@ class SentryComponentTest extends \yii\codeception\TestCase
             'production' => ['production', 'production', self::CLIENT_CONFIG_TYPE_ARRAY, 'mito\sentry\tests\unit\DummyRavenClient'],
             'client config is Dummy object' => ['development', 'development', self::CLIENT_CONFIG_TYPE_OBJECT, DummyRavenClient::class],
             'client config is object' => ['development', 'development', self::CLIENT_CONFIG_TYPE_OBJECT, \Raven_Client::class],
+            'client config is callable' => ['development', 'development', self::CLIENT_CONFIG_TYPE_CALLABLE, function () {
+                return new \Raven_Client(self::PRIVATE_DSN, [
+                    'tags' => ['test' => 'value'],
+                ]);
+            }],
         ];
     }
 
@@ -83,6 +89,10 @@ class SentryComponentTest extends \yii\codeception\TestCase
                 break;
             case self::CLIENT_CONFIG_TYPE_OBJECT:
                 $clientConfig = new $clientClass(self::PRIVATE_DSN, []);
+                break;
+            case self::CLIENT_CONFIG_TYPE_CALLABLE:
+                $clientConfig = $clientClass;
+                $clientClass = get_class($clientClass());
                 break;
         }
 
@@ -105,8 +115,13 @@ class SentryComponentTest extends \yii\codeception\TestCase
     public function clientConfigs()
     {
         return [
-            'array config' => [self::CLIENT_CONFIG_TYPE_ARRAY, 'mito\sentry\tests\unit\DummyRavenClient'],
-            'object config' => [self::CLIENT_CONFIG_TYPE_OBJECT, DummyRavenClient::class],
+            'array' => [self::CLIENT_CONFIG_TYPE_ARRAY, 'mito\sentry\tests\unit\DummyRavenClient'],
+            'object' => [self::CLIENT_CONFIG_TYPE_OBJECT, DummyRavenClient::class],
+            'callable' => [self::CLIENT_CONFIG_TYPE_CALLABLE, function () {
+                return new DummyRavenClient(self::PRIVATE_DSN, [
+                    'tags' => ['test' => 'value'],
+                ]);
+            }],
         ];
     }
 
@@ -127,6 +142,9 @@ class SentryComponentTest extends \yii\codeception\TestCase
             case self::CLIENT_CONFIG_TYPE_OBJECT:
                 $clientConfig = new $clientClass(self::PRIVATE_DSN, ['tags' => ['test' => 'value']]);
                 break;
+            default:
+                $clientConfig = $clientClass;
+                break;
         }
         $component = $this->mockSentryComponent([
             'jsNotifier' => true,
@@ -141,12 +159,27 @@ class SentryComponentTest extends \yii\codeception\TestCase
         $this->assertEquals('development', $component->client->tags['environment']);
     }
 
-    public function testInvalidClientConfig()
+    public function invalidConfigs()
     {
-        $this->expectException(\yii\base\InvalidConfigException::class);
+        return [
+            'class name - missing dsn' => ['mito\sentry\tests\unit\DummyRavenClient', \yii\base\InvalidConfigException::class],
+            'string or class name - missing class' => ['RavenClient', \ReflectionException::class],
+            'callable - invalid return value' => [function () { return 'string'; }, \yii\base\InvalidConfigException::class],
+        ];
+    }
+
+    /**
+     * @dataProvider invalidConfigs
+     *
+     * @param $config
+     * @param $exceptionClass
+     */
+    public function testInvalidClientConfig($config, $exceptionClass)
+    {
+        $this->expectException($exceptionClass);
         $component = $this->mockSentryComponent([
             'jsNotifier' => true,
-            'client' => \Raven_Client::class,
+            'client' => $config,
         ]);
     }
 
