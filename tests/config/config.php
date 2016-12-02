@@ -3,9 +3,9 @@
  * Application configuration shared by all test types
  */
 
-$dbDsn = getenv("CI_DB_DSN");
-$dbUsername = getenv("CI_DB_USERNAME");
-$dbPassword = getenv("CI_DB_PASSWORD");
+$dbDsn = getenv('CI_DB_DSN');
+$dbUsername = getenv('CI_DB_USERNAME');
+$dbPassword = getenv('CI_DB_PASSWORD');
 
 $dbConfig = [
     'dsn' => 'mysql:host=localhost;dbname=yii2_basic_tests',

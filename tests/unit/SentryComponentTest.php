@@ -137,15 +137,17 @@ class SentryComponentTest extends \yii\codeception\TestCase
 
     private function assertAssetRegistered($asset)
     {
-            if (Yii::$app->view instanceof \yii\web\View) {
-                $this->assertArrayHasKey($asset, Yii::$app->view->assetBundles);
-            }
+        if (Yii::$app->view instanceof \yii\web\View) {
+            $this->assertArrayHasKey($asset, Yii::$app->view->assetBundles);
         }
-        private function assertAssetNotRegistered($asset) {
-            if (Yii::$app->view instanceof \yii\web\View) {
-                $this->assertArrayNotHasKey($asset, Yii::$app->view->assetBundles);
-            }
+    }
+
+    private function assertAssetNotRegistered($asset)
+    {
+        if (Yii::$app->view instanceof \yii\web\View) {
+            $this->assertArrayNotHasKey($asset, Yii::$app->view->assetBundles);
         }
+    }
 
     public function testJsNotifierEnabledIfPublicDsnSet()
     {

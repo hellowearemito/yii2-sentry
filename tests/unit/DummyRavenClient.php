@@ -7,7 +7,8 @@ class DummyRavenClient
     public $tags = [];
     public $dsn;
 
-    public function __construct($dsn, $options) {
+    public function __construct($dsn, $options)
+    {
         if (isset($options['tags'])) {
             $this->tags = $options['tags'];
         }
