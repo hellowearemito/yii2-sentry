@@ -75,9 +75,9 @@ class SentryTargetTest extends \yii\codeception\TestCase
         $logger = $this->mockLogger($target);
         foreach ($expected as $message) {
             $target->sentry->shouldReceive('capture')
-                ->with(Mockery::on(function($data) use ($message) {
+                ->with(Mockery::on(function ($data) use ($message) {
                     return $data['message'] === $message;
-                }), Mockery::on(function($traces) {
+                }), Mockery::on(function ($traces) {
                     return true;
                 }))->once();
         }
@@ -111,16 +111,16 @@ class SentryTargetTest extends \yii\codeception\TestCase
         if ($expectLogged) {
             if ($type === self::EXCEPTION_TYPE_OBJECT) {
                 $target->sentry->shouldReceive('captureException')
-                    ->with(Mockery::on(function($exception) {
+                    ->with(Mockery::on(function ($exception) {
                         return ($exception instanceof \Throwable || $exception instanceof \Exception) && $exception->getMessage() === self::DEFAULT_ERROR_MESSAGE;
-                    }), Mockery::on(function($data) {
+                    }), Mockery::on(function ($data) {
                         return true;
                     }))->once();
             } else {
                 $target->sentry->shouldReceive('capture')
-                    ->with(Mockery::on(function($data) {
+                    ->with(Mockery::on(function ($data) {
                         return $data['message'] === self::DEFAULT_ERROR_MESSAGE;
-                    }), Mockery::on(function($traces) {
+                    }), Mockery::on(function ($traces) {
                         return true;
                     }))->once();
             }
@@ -130,9 +130,9 @@ class SentryTargetTest extends \yii\codeception\TestCase
             $target->sentry->shouldNotReceive('captureMessage');
         }
         $target->sentry->shouldReceive('capture')
-            ->with(Mockery::on(function($data) {
+            ->with(Mockery::on(function ($data) {
                 return $data['message'] === 'sentinel';
-            }), Mockery::on(function($traces) {
+            }), Mockery::on(function ($traces) {
                 return true;
             }))->once();
 
@@ -159,7 +159,7 @@ class SentryTargetTest extends \yii\codeception\TestCase
             [['levels' => 0], ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H']],
             [
                 ['levels' => Logger::LEVEL_INFO | Logger::LEVEL_WARNING | Logger::LEVEL_ERROR | Logger::LEVEL_TRACE],
-                ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H']
+                ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'],
             ],
             [['levels' => ['error']], ['B', 'G', 'H']],
             [['levels' => Logger::LEVEL_ERROR], ['B', 'G', 'H']],
@@ -181,7 +181,7 @@ class SentryTargetTest extends \yii\codeception\TestCase
             [['levels' => 0], ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H']],
             [
                 ['levels' => Logger::LEVEL_INFO | Logger::LEVEL_WARNING | Logger::LEVEL_ERROR | Logger::LEVEL_TRACE],
-                ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H']
+                ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'],
             ],
             [['levels' => ['error']], ['B', 'G', 'H']],
             [['levels' => Logger::LEVEL_ERROR], ['B', 'G', 'H']],
@@ -229,8 +229,7 @@ class SentryTargetTest extends \yii\codeception\TestCase
             ]);
         }
 
-        $results = array_merge($results, [
-        ]);
+        $results = array_merge($results, []);
 
         return $results;
     }
@@ -255,9 +254,9 @@ class SentryTargetTest extends \yii\codeception\TestCase
     {
         switch ($type) {
             case self::EXCEPTION_TYPE_OBJECT:
-                if ($exceptionClass === HttpException::class){
+                if ($exceptionClass === HttpException::class) {
                     $args = [$exceptionCode, self::DEFAULT_ERROR_MESSAGE];
-                }else{
+                } else {
                     $args = [self::DEFAULT_ERROR_MESSAGE, $exceptionCode];
                 }
                 $exception = (new \ReflectionClass($exceptionClass))->newInstanceArgs($args);

@@ -7,6 +7,6 @@ require_once(__DIR__ . '/../vendor/autoload.php');
 require_once(__DIR__ . '/../vendor/yiisoft/yii2/Yii.php');
 Raven_Autoloader::register();
 
-$_SERVER['SCRIPT_FILENAME'] = '/' . dirname(__DIR__) .'/web';
+$_SERVER['SCRIPT_FILENAME'] = '/' . dirname(__DIR__) . '/web';
 $_SERVER['SCRIPT_NAME'] = __DIR__ . '/web';
 Yii::setAlias('@mitosentry', dirname(__DIR__));
