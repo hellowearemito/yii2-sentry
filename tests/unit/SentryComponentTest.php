@@ -164,7 +164,9 @@ class SentryComponentTest extends \yii\codeception\TestCase
         return [
             'class name - missing dsn' => ['mito\sentry\tests\unit\DummyRavenClient', \yii\base\InvalidConfigException::class],
             'string or class name - missing class' => ['RavenClient', \ReflectionException::class],
-            'callable - invalid return value' => [function () { return 'string'; }, \yii\base\InvalidConfigException::class],
+            'callable - invalid return value' => [function () {
+                return 'string';
+            }, \yii\base\InvalidConfigException::class],
         ];
     }
 
