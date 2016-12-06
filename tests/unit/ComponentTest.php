@@ -18,6 +18,10 @@ class ComponentTest extends \yii\codeception\TestCase
     const CLIENT_CONFIG_TYPE_OBJECT = 'object';
     const CLIENT_CONFIG_TYPE_CALLABLE = 'callable';
 
+    const ENV_DEVELOPMENT = 'development';
+    const ENV_STAGING = 'staging';
+    const ENV_PRODUCTION = 'production';
+
     private function mockSentryComponent($options = [])
     {
         return Yii::createObject(ArrayHelper::merge([
@@ -65,12 +69,12 @@ class ComponentTest extends \yii\codeception\TestCase
     {
         return [
             'empty' => [null, null, self::CLIENT_CONFIG_TYPE_ARRAY, 'mito\sentry\tests\unit\DummyRavenClient'],
-            'development' => ['development', 'development', self::CLIENT_CONFIG_TYPE_ARRAY, 'mito\sentry\tests\unit\DummyRavenClient'],
-            'staging' => ['staging', 'staging', self::CLIENT_CONFIG_TYPE_ARRAY, 'mito\sentry\tests\unit\DummyRavenClient'],
-            'production' => ['production', 'production', self::CLIENT_CONFIG_TYPE_ARRAY, 'mito\sentry\tests\unit\DummyRavenClient'],
-            'client config is Dummy object' => ['development', 'development', self::CLIENT_CONFIG_TYPE_OBJECT, DummyRavenClient::class],
-            'client config is object' => ['development', 'development', self::CLIENT_CONFIG_TYPE_OBJECT, \Raven_Client::class],
-            'client config is callable' => ['development', 'development', self::CLIENT_CONFIG_TYPE_CALLABLE, function () {
+            'development' => [self::ENV_DEVELOPMENT, self::ENV_DEVELOPMENT, self::CLIENT_CONFIG_TYPE_ARRAY, 'mito\sentry\tests\unit\DummyRavenClient'],
+            'staging' => [self::ENV_STAGING, self::ENV_STAGING, self::CLIENT_CONFIG_TYPE_ARRAY, 'mito\sentry\tests\unit\DummyRavenClient'],
+            'production' => [self::ENV_PRODUCTION, self::ENV_PRODUCTION, self::CLIENT_CONFIG_TYPE_ARRAY, 'mito\sentry\tests\unit\DummyRavenClient'],
+            'client config is Dummy object' => [self::ENV_DEVELOPMENT, self::ENV_DEVELOPMENT, self::CLIENT_CONFIG_TYPE_OBJECT, DummyRavenClient::class],
+            'client config is object' => [self::ENV_DEVELOPMENT, self::ENV_DEVELOPMENT, self::CLIENT_CONFIG_TYPE_OBJECT, \Raven_Client::class],
+            'client config is callable' => [self::ENV_DEVELOPMENT, self::ENV_DEVELOPMENT, self::CLIENT_CONFIG_TYPE_CALLABLE, function () {
                 return new \Raven_Client(self::PRIVATE_DSN, [
                     'tags' => ['test' => 'value'],
                 ]);
@@ -148,7 +152,7 @@ class ComponentTest extends \yii\codeception\TestCase
         }
         $component = $this->mockSentryComponent([
             'jsNotifier' => true,
-            'environment' => 'development',
+            'environment' => self::ENV_DEVELOPMENT,
             'client' => $clientConfig,
         ]);
         $this->assertInstanceOf('mito\sentry\tests\unit\DummyRavenClient', $component->client);
@@ -156,7 +160,7 @@ class ComponentTest extends \yii\codeception\TestCase
         $this->assertArrayHasKey('test', $component->client->tags);
         $this->assertEquals('value', $component->client->tags['test']);
         $this->assertArrayHasKey('environment', $component->client->tags);
-        $this->assertEquals('development', $component->client->tags['environment']);
+        $this->assertEquals(self::ENV_DEVELOPMENT, $component->client->tags['environment']);
     }
 
     public function invalidConfigs()
@@ -202,7 +206,7 @@ class ComponentTest extends \yii\codeception\TestCase
 
         $component = $this->mockSentryComponent([
             'jsNotifier' => true,
-            'environment' => 'development',
+            'environment' => self::ENV_DEVELOPMENT,
             'client' => $raven,
         ]);
 
@@ -247,7 +251,7 @@ class ComponentTest extends \yii\codeception\TestCase
         $component = $this->mockSentryComponent([
             'publicDsn' => $publicDsn,
             'jsNotifier' => false,
-            'environment' => 'development',
+            'environment' => self::ENV_DEVELOPMENT,
             'client' => [
                 'class' => 'mito\sentry\tests\unit\DummyRavenClient',
             ],
@@ -262,7 +266,7 @@ class ComponentTest extends \yii\codeception\TestCase
         $component = $this->mockSentryComponent([
             'publicDsn' => '',
             'jsNotifier' => false,
-            'environment' => 'development',
+            'environment' => self::ENV_DEVELOPMENT,
             'client' => [
                 'class' => 'mito\sentry\tests\unit\DummyRavenClient',
             ],
@@ -274,7 +278,7 @@ class ComponentTest extends \yii\codeception\TestCase
     {
         $component = $this->mockSentryComponent([
             'jsNotifier' => false,
-            'environment' => 'development',
+            'environment' => self::ENV_DEVELOPMENT,
             'client' => [
                 'class' => 'mito\sentry\tests\unit\DummyRavenClient',
             ],
@@ -286,7 +290,7 @@ class ComponentTest extends \yii\codeception\TestCase
     {
         $component = $this->mockSentryComponent([
             'jsNotifier' => true,
-            'environment' => 'development',
+            'environment' => self::ENV_DEVELOPMENT,
             'client' => [
                 'class' => 'mito\sentry\tests\unit\DummyRavenClient',
             ],
