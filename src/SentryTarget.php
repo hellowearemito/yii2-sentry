@@ -55,8 +55,8 @@ class SentryTarget extends Target
                 'level' => static::getLevelName($level),
                 'timestamp' => $timestamp,
                 'tags' => [
-                    'category' => $category
-                ]
+                    'category' => $category,
+                ],
             ];
 
             if ($context instanceof \Throwable || $context instanceof \Exception) {

@@ -7,5 +7,5 @@ return [
         'assetManager' => [
             'basePath' => '@mitosentry/tests/unit/runtime/web/assets',
         ],
-    ]
+    ],
 ];
