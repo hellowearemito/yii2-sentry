@@ -5,13 +5,12 @@ namespace mito\sentry;
 use Closure;
 use mito\sentry\assets\RavenAsset;
 use Yii;
-use yii\base\Component;
 use yii\base\InvalidConfigException;
 use yii\helpers\ArrayHelper;
 use yii\helpers\Json;
 use yii\web\View;
 
-class SentryComponent extends Component
+class Component extends \yii\base\Component
 {
 
     /**

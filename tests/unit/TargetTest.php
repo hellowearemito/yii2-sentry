@@ -2,15 +2,15 @@
 
 namespace mito\sentry\tests\unit;
 
-use mito\sentry\SentryTarget;
-use mito\sentry\SentryComponent;
+use mito\sentry\Target;
+use mito\sentry\Component;
 use yii\log\Logger;
 use yii\helpers\ArrayHelper;
 use Yii;
 use Mockery;
 use yii\web\HttpException;
 
-class SentryTargetTest extends \yii\codeception\TestCase
+class TargetTest extends \yii\codeception\TestCase
 {
     const EXCEPTION_TYPE_OBJECT = 'object';
     const EXCEPTION_TYPE_MSG = 'message';
@@ -28,10 +28,10 @@ class SentryTargetTest extends \yii\codeception\TestCase
 
     protected function mockSentryTarget($options = [])
     {
-        $component = Mockery::mock(SentryComponent::className());
+        $component = Mockery::mock(Component::className());
 
         return Yii::createObject(ArrayHelper::merge([
-            'class' => SentryTarget::className(),
+            'class' => Target::className(),
             'sentry' => $component,
         ], $options));
     }
@@ -53,7 +53,7 @@ class SentryTargetTest extends \yii\codeception\TestCase
         // Attempting to call any method on sentryComponent will throw an exception.
         // If the component is disabled, SentryTarget should not call any methods on
         // SentryComponent.
-        $component = Mockery::mock(SentryComponent::className());
+        $component = Mockery::mock(Component::className());
         $component->enabled = false;
         $target = $this->mockSentryTarget([
             'sentry' => $component,

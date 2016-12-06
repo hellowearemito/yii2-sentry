@@ -2,17 +2,13 @@
 
 namespace mito\sentry;
 
-use Raven_Stacktrace;
-use yii\base\ErrorException;
-use yii\base\InvalidConfigException;
 use yii\di\Instance;
 use yii\log\Logger;
-use yii\log\Target;
 
-class SentryTarget extends Target
+class Target extends \yii\log\Target
 {
     /**
-     * @var string|SentryComponent
+     * @var string|Component
      */
     public $sentry = 'sentry';
 
@@ -25,7 +21,7 @@ class SentryTarget extends Target
     {
         parent::init();
 
-        $this->sentry = Instance::ensure($this->sentry, SentryComponent::className());
+        $this->sentry = Instance::ensure($this->sentry, Component::className());
 
         if (!$this->sentry->enabled) {
             $this->enabled = false;

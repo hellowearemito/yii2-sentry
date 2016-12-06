@@ -2,12 +2,12 @@
 
 namespace mito\sentry\tests\unit;
 
-use mito\sentry\SentryComponent;
+use mito\sentry\Component;
 use yii\helpers\ArrayHelper;
 use Yii;
 use Mockery;
 
-class SentryComponentTest extends \yii\codeception\TestCase
+class ComponentTest extends \yii\codeception\TestCase
 {
     const PRIVATE_DSN = 'https://65b4cf757v9kx53ja583f038bb1a07d6:cda7d637fb7kd85nch39c4445cf47126@getsentry.com/1';
     const PUBLIC_DSN = 'https://65b4cf757v9kx53ja583f038bb1a07d6@getsentry.com/1';
@@ -21,7 +21,7 @@ class SentryComponentTest extends \yii\codeception\TestCase
     private function mockSentryComponent($options = [])
     {
         return Yii::createObject(ArrayHelper::merge([
-            'class' => SentryComponent::className(),
+            'class' => Component::className(),
             'enabled' => true,
             'dsn' => self::PRIVATE_DSN,
         ], $options));
