@@ -1,0 +1,2 @@
+#!/bin/bash
+php ./vendor/bin/phpcs --standard=vendor/mito/yii2-coding-standards/Application src && php ./vendor/bin/phpcs --standard=vendor/mito/yii2-coding-standards/Application -s --exclude=PSR1.Files.SideEffects,PSR1.Classes.ClassDeclaration --extensions=php  tests

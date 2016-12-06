@@ -27,8 +27,7 @@ before_script:
     fi
 
 script:
-  - php ./vendor/bin/phpcs --standard=vendor/mito/yii2-coding-standards/Application src
-  - php ./vendor/bin/phpcs --standard=vendor/mito/yii2-coding-standards/Application -s --exclude=PSR1.Files.SideEffects,PSR1.Classes.ClassDeclaration --extensions=php  tests
+  - sh ./phpcs.sh
   - php ./vendor/bin/codecept run unit -d $PHPUNIT_FLAGS
 
 after_success:
