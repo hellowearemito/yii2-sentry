@@ -16,13 +16,13 @@ The preferred way to install this extension is through [composer](http://getcomp
 Either run
 
 ```
-php composer.phar require --prefer-dist mito/yii2-sentry "*"
+php composer.phar require --prefer-dist mito/yii2-sentry "~1.0.0"
 ```
 
 or add the following line to the require section of your `composer.json` file:
 
 ```
-"mito/yii2-sentry": "*"
+"mito/yii2-sentry": "~1.0.0"
 ```
 
 ## Requirements
@@ -39,12 +39,12 @@ Once the extension is installed, set your configuration in common config file:
 
 ```php
     'components' => [
-    
+
         'sentry' => [
-            'class' => 'mito\sentry\SentryComponent',
-            'dsn' => '', // private DSN
-            'environment' => YII_CONFIG_ENVIRONMENT, // if not set, the default is `development`
-            'jsNotifier' => true, // to collect JS errors
+            'class' => 'mito\sentry\Component',
+            'dsn' => 'YOUR-PRIVATE-DSN', // private DSN
+            'environment' => 'staging', // if not set, the default is `production`
+            'jsNotifier' => true, // to collect JS errors. Default value is `false`
             'clientOptions' => [ // raven-js config parameter
                 'whitelistUrls' => [ // collect JS errors from these urls
                     'http://staging.my-product.com',
@@ -55,7 +55,7 @@ Once the extension is installed, set your configuration in common config file:
         'log' => [
             'targets' => [
                 [
-                    'class' => 'mito\sentry\SentryTarget',
+                    'class' => 'mito\sentry\Target',
                     'levels' => ['error', 'warning'],
                     'except' => [
                         'yii\web\HttpException:404',
@@ -63,6 +63,7 @@ Once the extension is installed, set your configuration in common config file:
                 ]
             ],
         ],
+
     ],
 ```
 
