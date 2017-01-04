@@ -4,3 +4,4 @@
  - default environment tag is `production`
  - remove deprecated methods and properties
  - separate init method's content to individual methods
+ - renamed `\mito\sentry\SentryComponent` to `\mito\sentry\Component` and `\mito\sentry\SentryTarget` to `\mito\sentry\Target`
