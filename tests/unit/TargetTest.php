@@ -2,36 +2,31 @@
 
 namespace mito\sentry\tests\unit;
 
-use mito\sentry\SentryTarget;
-use mito\sentry\SentryComponent;
+use mito\sentry\Target;
+use mito\sentry\Component;
 use yii\log\Logger;
 use yii\helpers\ArrayHelper;
 use Yii;
 use Mockery;
 use yii\web\HttpException;
 
-class SentryTargetTest extends \yii\codeception\TestCase
+class TargetTest extends \yii\codeception\TestCase
 {
     const EXCEPTION_TYPE_OBJECT = 'object';
     const EXCEPTION_TYPE_MSG = 'message';
     const EXCEPTION_TYPE_STRING = 'string';
+    const EXCEPTION_TYPE_ARRAY = 'array';
 
     const DEFAULT_ERROR_MESSAGE = 'message';
 
     public $appConfig = '@mitosentry/tests/unit/config/main.php';
 
-    private $_exceptionTypes = [
-        self::EXCEPTION_TYPE_OBJECT,
-        self::EXCEPTION_TYPE_MSG,
-        self::EXCEPTION_TYPE_STRING,
-    ];
-
     protected function mockSentryTarget($options = [])
     {
-        $component = Mockery::mock(SentryComponent::className());
+        $component = Mockery::mock(Component::className());
 
         return Yii::createObject(ArrayHelper::merge([
-            'class' => SentryTarget::className(),
+            'class' => Target::className(),
             'sentry' => $component,
         ], $options));
     }
@@ -53,7 +48,7 @@ class SentryTargetTest extends \yii\codeception\TestCase
         // Attempting to call any method on sentryComponent will throw an exception.
         // If the component is disabled, SentryTarget should not call any methods on
         // SentryComponent.
-        $component = Mockery::mock(SentryComponent::className());
+        $component = Mockery::mock(Component::className());
         $component->enabled = false;
         $target = $this->mockSentryTarget([
             'sentry' => $component,
@@ -119,7 +114,7 @@ class SentryTargetTest extends \yii\codeception\TestCase
             } else {
                 $target->sentry->shouldReceive('capture')
                     ->with(Mockery::on(function ($data) {
-                        return $data['message'] === self::DEFAULT_ERROR_MESSAGE;
+                        return !empty($data['message']);
                     }), Mockery::on(function ($traces) {
                         return true;
                     }))->once();
@@ -219,6 +214,7 @@ class SentryTargetTest extends \yii\codeception\TestCase
             'catch code 503' => [['except' => ['yii\web\HttpException:404']], HttpException::class, 503, true, self::EXCEPTION_TYPE_OBJECT],
             'catch string' => [['except' => ['yii\web\HttpException:404']], null, null, true, self::EXCEPTION_TYPE_STRING],
             'catch message' => [['except' => ['yii\web\HttpException:404']], null, null, true, self::EXCEPTION_TYPE_MSG],
+            'catch array' => [['except' => ['yii\web\HttpException:404']], null, null, true, self::EXCEPTION_TYPE_ARRAY],
         ];
 
         // php7+
@@ -228,8 +224,6 @@ class SentryTargetTest extends \yii\codeception\TestCase
                 'catch \Error' => [['except' => ['yii\web\HttpException:404']], \Error::class, null, true, self::EXCEPTION_TYPE_OBJECT],
             ]);
         }
-
-        $results = array_merge($results, []);
 
         return $results;
     }
@@ -266,6 +260,12 @@ class SentryTargetTest extends \yii\codeception\TestCase
                 break;
             case self::EXCEPTION_TYPE_STRING:
                 $exception = self::DEFAULT_ERROR_MESSAGE;
+                break;
+            case self::EXCEPTION_TYPE_ARRAY:
+                $exception = [
+                    'message' => self::DEFAULT_ERROR_MESSAGE,
+                    'other' => 'extra message',
+                ];
                 break;
             default:
                 $exception = false;
