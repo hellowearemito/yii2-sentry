@@ -65,7 +65,7 @@ class Target extends \yii\log\Target
                 unset($extra['msg']);
                 $data['extra'] = VarDumper::export($extra);
             } else {
-                $data['message'] = is_array($context)? VarDumper::export($context) : $context;
+                $data['message'] = is_array($context) ? VarDumper::export($context) : $context;
                 $data['extra']   = VarDumper::export($context);
             }
 
