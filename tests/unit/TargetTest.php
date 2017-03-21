@@ -17,13 +17,6 @@ class TargetTest extends \yii\codeception\TestCase
     const EXCEPTION_TYPE_STRING = 'string';
     const EXCEPTION_TYPE_ARRAY = 'array';
 
-    const EXCEPTION_TYPES = [
-        self::EXCEPTION_TYPE_OBJECT,
-        self::EXCEPTION_TYPE_MSG,
-        self::EXCEPTION_TYPE_STRING,
-        self::EXCEPTION_TYPE_ARRAY,
-    ];
-
     const DEFAULT_ERROR_MESSAGE = 'message';
 
     public $appConfig = '@mitosentry/tests/unit/config/main.php';
