@@ -60,7 +60,7 @@ Once the extension is installed, set your configuration in common config file:
                     'except' => [
                         'yii\web\HttpException:404',
                     ],
-                ]
+                ],
             ],
         ],
 
