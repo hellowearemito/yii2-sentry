@@ -45,7 +45,7 @@ Once the extension is installed, set your configuration in common config file:
             'dsn' => 'YOUR-PRIVATE-DSN', // private DSN
             'environment' => 'staging', // if not set, the default is `production`
             'jsNotifier' => true, // to collect JS errors. Default value is `false`
-            'clientOptions' => [ // raven-js config parameter
+            'jsOptions' => [ // raven-js config parameter
                 'whitelistUrls' => [ // collect JS errors from these urls
                     'http://staging.my-product.com',
                     'https://my-product.com',
