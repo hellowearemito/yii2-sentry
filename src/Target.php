@@ -3,6 +3,7 @@
 namespace mito\sentry;
 
 use yii\di\Instance;
+use yii\helpers\VarDumper;
 use yii\log\Logger;
 
 class Target extends \yii\log\Target
@@ -62,9 +63,10 @@ class Target extends \yii\log\Target
                 $data['message'] = $context['msg'];
                 $extra = $context;
                 unset($extra['msg']);
-                $data['extra'] = $extra;
+                $data['extra'] = VarDumper::export($extra);
             } else {
-                $data['message'] = $context;
+                $data['message'] = is_array($context)? VarDumper::export($context) : $context;
+                $data['extra']   = VarDumper::export($context);
             }
 
             $this->sentry->capture($data, $traces);

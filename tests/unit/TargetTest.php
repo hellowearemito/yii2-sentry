@@ -15,16 +15,18 @@ class TargetTest extends \yii\codeception\TestCase
     const EXCEPTION_TYPE_OBJECT = 'object';
     const EXCEPTION_TYPE_MSG = 'message';
     const EXCEPTION_TYPE_STRING = 'string';
+    const EXCEPTION_TYPE_ARRAY = 'array';
+
+    const EXCEPTION_TYPES = [
+        self::EXCEPTION_TYPE_OBJECT,
+        self::EXCEPTION_TYPE_MSG,
+        self::EXCEPTION_TYPE_STRING,
+        self::EXCEPTION_TYPE_ARRAY,
+    ];
 
     const DEFAULT_ERROR_MESSAGE = 'message';
 
     public $appConfig = '@mitosentry/tests/unit/config/main.php';
-
-    private $_exceptionTypes = [
-        self::EXCEPTION_TYPE_OBJECT,
-        self::EXCEPTION_TYPE_MSG,
-        self::EXCEPTION_TYPE_STRING,
-    ];
 
     protected function mockSentryTarget($options = [])
     {
@@ -119,7 +121,7 @@ class TargetTest extends \yii\codeception\TestCase
             } else {
                 $target->sentry->shouldReceive('capture')
                     ->with(Mockery::on(function ($data) {
-                        return $data['message'] === self::DEFAULT_ERROR_MESSAGE;
+                        return !empty($data['message']);
                     }), Mockery::on(function ($traces) {
                         return true;
                     }))->once();
@@ -219,6 +221,7 @@ class TargetTest extends \yii\codeception\TestCase
             'catch code 503' => [['except' => ['yii\web\HttpException:404']], HttpException::class, 503, true, self::EXCEPTION_TYPE_OBJECT],
             'catch string' => [['except' => ['yii\web\HttpException:404']], null, null, true, self::EXCEPTION_TYPE_STRING],
             'catch message' => [['except' => ['yii\web\HttpException:404']], null, null, true, self::EXCEPTION_TYPE_MSG],
+            'catch array' => [['except' => ['yii\web\HttpException:404']], null, null, true, self::EXCEPTION_TYPE_ARRAY],
         ];
 
         // php7+
@@ -228,8 +231,6 @@ class TargetTest extends \yii\codeception\TestCase
                 'catch \Error' => [['except' => ['yii\web\HttpException:404']], \Error::class, null, true, self::EXCEPTION_TYPE_OBJECT],
             ]);
         }
-
-        $results = array_merge($results, []);
 
         return $results;
     }
@@ -266,6 +267,12 @@ class TargetTest extends \yii\codeception\TestCase
                 break;
             case self::EXCEPTION_TYPE_STRING:
                 $exception = self::DEFAULT_ERROR_MESSAGE;
+                break;
+            case self::EXCEPTION_TYPE_ARRAY:
+                $exception = [
+                    'message' => self::DEFAULT_ERROR_MESSAGE,
+                    'other' => 'extra message',
+                ];
                 break;
             default:
                 $exception = false;
