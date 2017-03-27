@@ -5,6 +5,7 @@ namespace mito\sentry;
 use Closure;
 use mito\sentry\assets\RavenAsset;
 use Yii;
+use yii\base\Exception;
 use yii\base\InvalidConfigException;
 use yii\helpers\ArrayHelper;
 use yii\helpers\Json;
@@ -117,10 +118,21 @@ class Component extends \yii\base\Component
      */
     private function registerAssets()
     {
-        if ($this->jsNotifier && Yii::$app instanceof \yii\web\Application) {
+        if ($this->jsNotifier === false) {
+            return;
+        }
+
+        if (!Yii::$app instanceof \yii\web\Application) {
+            return;
+        }
+
+        try {
             $view = Yii::$app->getView();
             RavenAsset::register($view);
             $view->registerJs('Raven.config(' . Json::encode($this->publicDsn) . ', ' . Json::encode($this->jsOptions) . ').install();', View::POS_HEAD);
+        } catch (Exception $e) {
+            // initialize Sentry component even if unable to register the assets
+            Yii::error($e->getMessage());
         }
     }
 
