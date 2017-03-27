@@ -132,7 +132,7 @@ class Component extends \yii\base\Component
             $view->registerJs('Raven.config(' . Json::encode($this->publicDsn) . ', ' . Json::encode($this->jsOptions) . ').install();', View::POS_HEAD);
         } catch (Exception $e) {
             // initialize Sentry component even if unable to register the assets
-            // (eg. the assets folder is not writable by the webserver user)
+            Yii::error($e->getMessage());
         }
     }
 
