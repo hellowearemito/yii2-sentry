@@ -63,10 +63,16 @@ class Target extends \yii\log\Target
                 $data['message'] = $context['msg'];
                 $extra = $context;
                 unset($extra['msg']);
-                $data['extra'] = VarDumper::export($extra);
+                $data['extra'] = $extra;
             } else {
-                $data['message'] = is_array($context) ? VarDumper::export($context) : $context;
-                $data['extra']   = VarDumper::export($context);
+                // If the message is not a string, log it with VarDumper::export,
+                // like the other log targets in Yii.
+                $data['message'] = is_string($context) ? $context : VarDumper::export($context);
+                if (is_array($context)) {
+                    // But if it's an array, also send it as an array,
+                    // so that it can be displayed nicely in Sentry.
+                    $data['extra'] = $context;
+                }
             }
 
             $this->sentry->capture($data, $traces);
