@@ -118,11 +118,11 @@ class Component extends \yii\base\Component
      */
     private function registerAssets()
     {
-        if ($this->jsNotifier === false){
+        if ($this->jsNotifier === false) {
             return;
         }
 
-        if(!Yii::$app instanceof \yii\web\Application) {
+        if (!Yii::$app instanceof \yii\web\Application) {
             return;
         }
 
