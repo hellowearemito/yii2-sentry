@@ -92,10 +92,10 @@ class Component extends \yii\base\Component
             return;
         }
 
-        if (is_object($this->client) && property_exists($this->client, 'tags')) {
-            $this->client->tags = ArrayHelper::merge($this->client->tags, ['environment' => $this->environment]);
+        if (is_object($this->client) && property_exists($this->client, 'environment')) {
+            $this->client->environment = $this->environment;
         }
-        $this->jsOptions['tags']['environment'] = $this->environment;
+        $this->jsOptions['environment'] = $this->environment;
     }
 
     private function setRavenClient()

@@ -108,11 +108,10 @@ class ComponentTest extends \yii\codeception\TestCase
         $this->assertEquals($expected, $component->environment);
         $this->assertInstanceOf($clientClass, $component->client);
         if (!empty($environment)) {
-            $this->assertArrayHasKey('tags', $component->jsOptions);
-            $this->assertArrayHasKey('environment', $component->client->tags);
-            $this->assertEquals($expected, $component->client->tags['environment']);
-            $this->assertEquals($expected, $component->jsOptions['tags']['environment']);
-            $this->assertEquals($expected, $component->client->tags['environment']);
+            $this->assertArrayHasKey('environment', $component->jsOptions);
+            $this->assertObjectHasAttribute('environment', $component->client);
+            $this->assertEquals($expected, $component->client->environment);
+            $this->assertEquals($expected, $component->jsOptions['environment']);
         }
     }
 
@@ -159,8 +158,8 @@ class ComponentTest extends \yii\codeception\TestCase
         $this->assertEquals(self::PRIVATE_DSN, $component->client->dsn);
         $this->assertArrayHasKey('test', $component->client->tags);
         $this->assertEquals('value', $component->client->tags['test']);
-        $this->assertArrayHasKey('environment', $component->client->tags);
-        $this->assertEquals(self::ENV_DEVELOPMENT, $component->client->tags['environment']);
+        $this->assertObjectHasAttribute('environment', $component->client);
+        $this->assertEquals(self::ENV_DEVELOPMENT, $component->client->environment);
     }
 
     public function invalidConfigs()
