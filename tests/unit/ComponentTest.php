@@ -202,6 +202,7 @@ class ComponentTest extends \yii\codeception\TestCase
     public function testCapture()
     {
         $raven = Mockery::mock('\Raven_Client');
+        $raven->shouldReceive('close_curl_resource')->atMost()->once();
 
         $component = $this->mockSentryComponent([
             'jsNotifier' => true,
