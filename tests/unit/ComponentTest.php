@@ -22,6 +22,12 @@ class ComponentTest extends \yii\codeception\TestCase
     const ENV_STAGING = 'staging';
     const ENV_PRODUCTION = 'production';
 
+    protected function tearDown()
+    {
+        parent::tearDown();
+        Mockery::close();
+    }
+
     private function mockSentryComponent($options = [])
     {
         return Yii::createObject(ArrayHelper::merge([

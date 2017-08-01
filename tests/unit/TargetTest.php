@@ -21,6 +21,12 @@ class TargetTest extends \yii\codeception\TestCase
 
     public $appConfig = '@mitosentry/tests/unit/config/main.php';
 
+    protected function tearDown()
+    {
+        parent::tearDown();
+        Mockery::close();
+    }
+
     protected function mockSentryTarget($options = [])
     {
         $component = Mockery::mock(Component::className());
