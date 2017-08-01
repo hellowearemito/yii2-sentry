@@ -30,9 +30,12 @@
             "mito\\sentry\\tests\\": "tests/"
         }
     },
-    "extra": {
-        "asset-installer-paths": {
-            "bower-asset-library": "vendor/bower"
+    "config": {
+        "fxp-asset": {
+            "installer-paths": {
+                "bower-asset-library": "vendor/bower"
+            },
+            "pattern-skip-version": "(-build|-patch)"
         }
     }
 }
