@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "content-hash": "06763dcbe66f9b1e1507ccb84d1b651a",
+    "content-hash": "26f40cc2221e5b8971d0ddaf4c1d4fdd",
     "packages": [
         {
             "name": "bower-asset/jquery",
@@ -284,21 +284,21 @@
         },
         {
             "name": "sentry/sentry",
-            "version": "1.6.2",
+            "version": "1.7.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/getsentry/sentry-php.git",
-                "reference": "5bee26136ab3fc166334cd972892bf71bd361558"
+                "reference": "f92d30467d9696606352aa06afeac0a60c4458ef"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/getsentry/sentry-php/zipball/5bee26136ab3fc166334cd972892bf71bd361558",
-                "reference": "5bee26136ab3fc166334cd972892bf71bd361558",
+                "url": "https://api.github.com/repos/getsentry/sentry-php/zipball/f92d30467d9696606352aa06afeac0a60c4458ef",
+                "reference": "f92d30467d9696606352aa06afeac0a60c4458ef",
                 "shasum": ""
             },
             "require": {
                 "ext-curl": "*",
-                "php": ">=5.2.4"
+                "php": "^5.3|^7.0"
             },
             "conflict": {
                 "raven/raven": "*"
@@ -309,6 +309,10 @@
                 "phpunit/phpunit": "^4.8 || ^5.0"
             },
             "suggest": {
+                "ext-hash": "*",
+                "ext-json": "*",
+                "ext-mbstring": "*",
+                "immobiliare/sentry-php": "Fork that fixes support for PHP 5.2",
                 "monolog/monolog": "Automatically capture Monolog events as breadcrumbs"
             },
             "bin": [
@@ -317,7 +321,7 @@
             "type": "library",
             "extra": {
                 "branch-alias": {
-                    "dev-master": "1.6.x-dev"
+                    "dev-master": "1.7.x-dev"
                 }
             },
             "autoload": {
@@ -341,7 +345,7 @@
                 "log",
                 "logging"
             ],
-            "time": "2017-02-03T07:32:53+00:00"
+            "time": "2017-06-07T18:13:17+00:00"
         },
         {
             "name": "yiisoft/yii2",
@@ -1203,7 +1207,7 @@
             ],
             "authors": [
                 {
-                    "name": "Pádraic Brady",
+                    "name": "Padraic Brady",
                     "email": "padraic.brady@gmail.com",
                     "homepage": "http://blog.astrumfutura.com"
                 },

@@ -12,7 +12,7 @@
     ],
     "require": {
         "yiisoft/yii2": "~2.0",
-        "sentry/sentry": "1.6.2",
+        "sentry/sentry": "~1.7.0",
         "bower-asset/raven-js": "~3.17"
     },
     "require-dev": {
