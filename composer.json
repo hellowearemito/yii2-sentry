@@ -11,9 +11,9 @@
         }
     ],
     "require": {
-        "yiisoft/yii2": "*",
-        "sentry/sentry": "1.6.*",
-        "bower-asset/raven-js": "3.12.*"
+        "yiisoft/yii2": "~2.0",
+        "sentry/sentry": "~1.7",
+        "bower-asset/raven-js": "~3.17"
     },
     "require-dev": {
         "yiisoft/yii2-codeception": "~2.0",
