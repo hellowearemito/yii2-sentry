@@ -61,12 +61,11 @@ class Component extends \yii\base\Component
 
     public function init()
     {
-        $this->validateDsn();
-
         if (!$this->enabled) {
             return;
         }
 
+        $this->validateDsn();
         $this->setRavenClient();
         $this->setEnvironmentOptions();
         $this->generatePublicDsn();
