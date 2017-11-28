@@ -1222,24 +1222,25 @@
         },
         {
             "name": "mito/yii2-coding-standards",
-            "version": "2.0.0-beta15",
+            "version": "2.0.0-beta16",
             "source": {
                 "type": "git",
                 "url": "https://github.com/hellowearemito/yii2-coding-standards.git",
-                "reference": "64edb06508df74cf3735b74fb1d083784aa82ba3"
+                "reference": "41f1fcc48c34722a0cb82b3259e279e580019421"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/hellowearemito/yii2-coding-standards/zipball/64edb06508df74cf3735b74fb1d083784aa82ba3",
-                "reference": "64edb06508df74cf3735b74fb1d083784aa82ba3",
+                "url": "https://api.github.com/repos/hellowearemito/yii2-coding-standards/zipball/41f1fcc48c34722a0cb82b3259e279e580019421",
+                "reference": "41f1fcc48c34722a0cb82b3259e279e580019421",
                 "shasum": ""
             },
             "require": {
                 "php": ">=5.4.0",
-                "squizlabs/php_codesniffer": ">=2.7.0"
+                "squizlabs/php_codesniffer": "~2.7"
             },
             "require-dev": {
-                "phpunit/phpunit": "^5.3"
+                "phpunit/phpunit": "^5.3",
+                "satooshi/php-coveralls": "^1.0"
             },
             "type": "library",
             "notification-url": "https://packagist.org/downloads/",
@@ -1280,16 +1281,20 @@
                     "name": "Paul Klimov",
                     "email": "klimov.paul@gmail.com",
                     "role": "Core framework development"
+                },
+                {
+                    "name": "Nikola Kovacs",
+                    "email": "nikola.kovacs@gmail.com"
                 }
             ],
-            "description": "Yii PHP Framework Version 2 - Coding standard tools",
-            "homepage": "http://www.yiiframework.com/",
+            "description": "Mito Yii 2 coding standards",
+            "homepage": "https://mito.hu/",
             "keywords": [
                 "codesniffer",
                 "framework",
                 "yii"
             ],
-            "time": "2016-10-28T14:30:49+00:00"
+            "time": "2017-11-20T15:57:26+00:00"
         },
         {
             "name": "mockery/mockery",
@@ -2670,36 +2675,63 @@
         },
         {
             "name": "squizlabs/php_codesniffer",
-            "version": "3.1.1",
+            "version": "2.9.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/squizlabs/PHP_CodeSniffer.git",
-                "reference": "d667e245d5dcd4d7bf80f26f2c947d476b66213e"
+                "reference": "dcbed1074f8244661eecddfc2a675430d8d33f62"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/squizlabs/PHP_CodeSniffer/zipball/d667e245d5dcd4d7bf80f26f2c947d476b66213e",
-                "reference": "d667e245d5dcd4d7bf80f26f2c947d476b66213e",
+                "url": "https://api.github.com/repos/squizlabs/PHP_CodeSniffer/zipball/dcbed1074f8244661eecddfc2a675430d8d33f62",
+                "reference": "dcbed1074f8244661eecddfc2a675430d8d33f62",
                 "shasum": ""
             },
             "require": {
                 "ext-simplexml": "*",
                 "ext-tokenizer": "*",
                 "ext-xmlwriter": "*",
-                "php": ">=5.4.0"
+                "php": ">=5.1.2"
             },
             "require-dev": {
-                "phpunit/phpunit": "^4.0 || ^5.0 || ^6.0"
+                "phpunit/phpunit": "~4.0"
             },
             "bin": [
-                "bin/phpcs",
-                "bin/phpcbf"
+                "scripts/phpcs",
+                "scripts/phpcbf"
             ],
             "type": "library",
             "extra": {
                 "branch-alias": {
-                    "dev-master": "3.x-dev"
+                    "dev-master": "2.x-dev"
                 }
+            },
+            "autoload": {
+                "classmap": [
+                    "CodeSniffer.php",
+                    "CodeSniffer/CLI.php",
+                    "CodeSniffer/Exception.php",
+                    "CodeSniffer/File.php",
+                    "CodeSniffer/Fixer.php",
+                    "CodeSniffer/Report.php",
+                    "CodeSniffer/Reporting.php",
+                    "CodeSniffer/Sniff.php",
+                    "CodeSniffer/Tokens.php",
+                    "CodeSniffer/Reports/",
+                    "CodeSniffer/Tokenizers/",
+                    "CodeSniffer/DocGenerators/",
+                    "CodeSniffer/Standards/AbstractPatternSniff.php",
+                    "CodeSniffer/Standards/AbstractScopeSniff.php",
+                    "CodeSniffer/Standards/AbstractVariableSniff.php",
+                    "CodeSniffer/Standards/IncorrectPatternException.php",
+                    "CodeSniffer/Standards/Generic/Sniffs/",
+                    "CodeSniffer/Standards/MySource/Sniffs/",
+                    "CodeSniffer/Standards/PEAR/Sniffs/",
+                    "CodeSniffer/Standards/PSR1/Sniffs/",
+                    "CodeSniffer/Standards/PSR2/Sniffs/",
+                    "CodeSniffer/Standards/Squiz/Sniffs/",
+                    "CodeSniffer/Standards/Zend/Sniffs/"
+                ]
             },
             "notification-url": "https://packagist.org/downloads/",
             "license": [
@@ -2717,7 +2749,7 @@
                 "phpcs",
                 "standards"
             ],
-            "time": "2017-10-16T22:40:25+00:00"
+            "time": "2017-05-22T02:43:20+00:00"
         },
         {
             "name": "stecman/symfony-console-completion",
