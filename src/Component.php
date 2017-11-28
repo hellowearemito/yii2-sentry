@@ -38,6 +38,11 @@ class Component extends \yii\base\Component
      * @note this is ignored if [[client]] is a Raven client instance.
      */
     public $environment = 'production';
+    
+    /**
+     * @var release name for passing to Raven client
+     */
+    public $release;
 
     /**
      * collect JavaScript errors
@@ -67,8 +72,8 @@ class Component extends \yii\base\Component
             return;
         }
 
-        $this->setRavenClient();
         $this->setEnvironmentOptions();
+        $this->setRavenClient();        
         $this->generatePublicDsn();
         $this->registerAssets();
     }
@@ -88,14 +93,13 @@ class Component extends \yii\base\Component
      */
     private function setEnvironmentOptions()
     {
-        if (empty($this->environment)) {
-            return;
-        }
-
         if (is_object($this->client) && property_exists($this->client, 'environment')) {
             $this->client->environment = $this->environment;
+            $this->jsOptions['environment'] = $this->environment;
         }
-        $this->jsOptions['environment'] = $this->environment;
+        if (is_object($this->client) && property_exists($this->client, 'release')) {
+            $this->client->release = $this->release;
+        }
     }
 
     private function setRavenClient()
