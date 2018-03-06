@@ -58,7 +58,10 @@ class Component extends \yii\base\Component
      * @var \Raven_Client|array Raven client or configuration array used to instantiate one
      */
     public $client = [];
-
+    
+    /**
+     * @throws InvalidConfigException
+     */
     public function init()
     {
         if (!$this->enabled) {
@@ -96,7 +99,10 @@ class Component extends \yii\base\Component
         }
         $this->jsOptions['environment'] = $this->environment;
     }
-
+    
+    /**
+     * @throws InvalidConfigException
+     */
     private function setRavenClient()
     {
         if (is_array($this->client)) {
@@ -106,7 +112,7 @@ class Component extends \yii\base\Component
         } elseif (!is_object($this->client) || $this->client instanceof Closure) {
             $this->client = Yii::createObject($this->client);
         }
-
+    
         if (!is_object($this->client)) {
             throw new InvalidConfigException(get_class($this) . '::' . 'client must be an object');
         }
@@ -137,16 +143,28 @@ class Component extends \yii\base\Component
 
     public function captureMessage($message, $params, $levelOrOptions = [], $stack = false, $vars = null)
     {
+        if (!$this->enabled) {
+            Yii::trace(Json::encode([$message, $params, $levelOrOptions]), __CLASS__);
+            return '-1';
+        }
         return $this->client->captureMessage($message, $params, $levelOrOptions, $stack, $vars);
     }
 
     public function captureException($exception, $culpritOrOptions = null, $logger = null, $vars = null)
     {
+        if (!$this->enabled) {
+            Yii::trace(Json::encode($exception), __CLASS__);
+            return '-1';
+        }
         return $this->client->captureException($exception, $culpritOrOptions, $logger, $vars);
     }
 
     public function capture($data, $stack = null, $vars = null)
     {
+        if (!$this->enabled) {
+            Yii::trace(Json::encode($data), __CLASS__);
+            return '-1';
+        }
         return $this->client->capture($data, $stack, $vars);
     }
 
