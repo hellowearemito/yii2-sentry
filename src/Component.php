@@ -153,7 +153,7 @@ class Component extends \yii\base\Component
     public function captureException($exception, $culpritOrOptions = null, $logger = null, $vars = null)
     {
         if (!$this->enabled) {
-            Yii::trace(Json::encode($exception), __CLASS__);
+            Yii::trace(Json::encode([$message, $params, $levelOrOptions]), __CLASS__);
             return '-1';
         }
         return $this->client->captureException($exception, $culpritOrOptions, $logger, $vars);
