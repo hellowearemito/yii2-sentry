@@ -99,7 +99,7 @@ class Component extends \yii\base\Component
         }
         $this->jsOptions['environment'] = $this->environment;
     }
-    
+
     /**
      * @throws InvalidConfigException
      */
