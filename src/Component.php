@@ -112,7 +112,7 @@ class Component extends \yii\base\Component
         } elseif (!is_object($this->client) || $this->client instanceof Closure) {
             $this->client = Yii::createObject($this->client);
         }
-    
+
         if (!is_object($this->client)) {
             throw new InvalidConfigException(get_class($this) . '::' . 'client must be an object');
         }
