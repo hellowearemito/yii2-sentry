@@ -144,8 +144,8 @@ class Component extends \yii\base\Component
     public function captureMessage($message, $params, $levelOrOptions = [], $stack = false, $vars = null)
     {
         if (!$this->enabled) {
-            Yii::trace(Json::encode([$message, $params, $levelOrOptions]), __CLASS__);
-            return '-1';
+            Yii::debug(Json::encode([$message, $params, $levelOrOptions]), __CLASS__);
+            return null;
         }
         return $this->client->captureMessage($message, $params, $levelOrOptions, $stack, $vars);
     }
@@ -153,8 +153,8 @@ class Component extends \yii\base\Component
     public function captureException($exception, $culpritOrOptions = null, $logger = null, $vars = null)
     {
         if (!$this->enabled) {
-            Yii::trace(Json::encode([$message, $params, $levelOrOptions]), __CLASS__);
-            return '-1';
+            Yii::debug(Json::encode($exception), __CLASS__);
+            return null;
         }
         return $this->client->captureException($exception, $culpritOrOptions, $logger, $vars);
     }
@@ -162,8 +162,8 @@ class Component extends \yii\base\Component
     public function capture($data, $stack = null, $vars = null)
     {
         if (!$this->enabled) {
-            Yii::trace(Json::encode($data), __CLASS__);
-            return '-1';
+            Yii::debug(Json::encode($data), __CLASS__);
+            return null;
         }
         return $this->client->capture($data, $stack, $vars);
     }
