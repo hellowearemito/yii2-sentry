@@ -2,3 +2,4 @@
 /vendor
 /tests/runtime/web/assets/
 !/tests/runtime/web/assets/.gitkeep
+.idea/
