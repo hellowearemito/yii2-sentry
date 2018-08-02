@@ -8,4 +8,8 @@ return [
             'basePath' => '@mitosentry/tests/unit/runtime/web/assets',
         ],
     ],
+    'aliases' => [
+        '@bower' => '@vendor/bower-asset',
+        '@npm' => '@vendor/npm-asset',
+    ],
 ];
