@@ -128,7 +128,7 @@ class Component extends \yii\base\Component
         try {
             $view = Yii::$app->getView();
             RavenAsset::register($view);
-            $view->registerJs('Raven.config(' . Json::encode($this->publicDsn) . ', ' . Json::encode($this->jsOptions) . ').install();', View::POS_HEAD);
+            $view->registerJs('window.Raven && Raven.config(' . Json::encode($this->publicDsn) . ', ' . Json::encode($this->jsOptions) . ').install();', View::POS_HEAD);
         } catch (Exception $e) {
             // initialize Sentry component even if unable to register the assets
             Yii::error($e->getMessage());
