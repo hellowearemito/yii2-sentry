@@ -7,7 +7,7 @@ php:
   - 7.2
 
 # to support hhvm
-dist: trusty
+dist: xenial
 
 # faster builds on new travis setup not using sudo
 sudo: false
